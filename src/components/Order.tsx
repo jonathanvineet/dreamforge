@@ -1,0 +1,97 @@
+import { useState, DragEvent } from "react";
+import { toast } from "sonner";
+
+export function Order() {
+  const [drag, setDrag] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setDrag(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) setFile(f);
+  };
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast.success("Thank you. We'll be in touch within 48 hours.");
+  };
+
+  return (
+    <section id="order" className="relative py-32 md:py-44">
+      <div className="mx-auto max-w-4xl px-6">
+        <div className="mb-14 text-center">
+          <p className="eyebrow reveal mb-5">Start a project</p>
+          <h2 className="display reveal reveal-delay-1 text-4xl leading-[1.05] md:text-6xl">
+            Tell us what<br /><span className="italic text-foreground-soft">you'd like to make.</span>
+          </h2>
+          <p className="reveal reveal-delay-2 mx-auto mt-6 max-w-md text-sm text-muted-foreground">
+            Share a brief, a sketch, or a 3D file. We'll respond personally with a plan and a quote.
+          </p>
+        </div>
+
+        <form onSubmit={onSubmit} className="reveal reveal-delay-3 rounded-3xl glass-strong p-8 shadow-lift md:p-12">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Field label="Name" name="name" placeholder="Your name" />
+            <Field label="Email" name="email" type="email" placeholder="you@studio.com" />
+          </div>
+          <div className="mt-6">
+            <Field label="Project" name="project" placeholder="Anime figure, custom decor, etc." />
+          </div>
+          <div className="mt-6">
+            <label className="eyebrow mb-3 block">Brief</label>
+            <textarea
+              rows={4}
+              placeholder="Describe the piece, the size, and the feeling you're after."
+              className="w-full resize-none rounded-xl border border-foreground/10 bg-background/60 px-4 py-3 text-sm placeholder:text-muted-foreground/70 focus:border-foreground/30 focus:outline-none focus:ring-0 transition-colors duration-300"
+            />
+          </div>
+
+          <div className="mt-6">
+            <label className="eyebrow mb-3 block">Attach a file</label>
+            <label
+              onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={onDrop}
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center transition-all duration-500 ease-out-soft ${
+                drag ? "border-foreground/40 bg-foreground/[0.03]" : "border-foreground/15 bg-background/40"
+              }`}
+            >
+              <input type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <div className="display text-2xl">{file ? file.name : "Drop your file"}</div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {file ? `${(file.size / 1024).toFixed(0)} KB` : ".stl, .obj, .step, .pdf, .jpg — up to 100MB"}
+              </p>
+            </label>
+          </div>
+
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-foreground/10 pt-8 md:flex-row">
+            <p className="text-xs text-muted-foreground">We reply within 48 hours.</p>
+            <button
+              type="submit"
+              className="group inline-flex items-center gap-2 rounded-full bg-foreground px-7 py-3.5 text-sm font-medium text-background transition-transform duration-500 ease-out-soft hover:scale-[1.02]"
+            >
+              Send brief
+              <span className="transition-transform duration-500 ease-out-soft group-hover:translate-x-0.5">→</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  );
+}
+
+function Field({ label, name, type = "text", placeholder }: { label: string; name: string; type?: string; placeholder?: string }) {
+  return (
+    <div>
+      <label htmlFor={name} className="eyebrow mb-3 block">{label}</label>
+      <input
+        id={name}
+        name={name}
+        type={type}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-foreground/10 bg-background/60 px-4 py-3 text-sm placeholder:text-muted-foreground/70 focus:border-foreground/30 focus:outline-none focus:ring-0 transition-colors duration-300"
+      />
+    </div>
+  );
+}
