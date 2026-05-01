@@ -1,20 +1,57 @@
-import { useState, DragEvent } from "react";
+import { useState, DragEvent, useEffect } from "react";
 import { toast } from "sonner";
+import emailjs from "@emailjs/browser";
 
 export function Order() {
-  const [drag, setDrag] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setDrag(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f) setFile(f);
+  const EMAILJS_CONFIG = {
+    SERVICE_ID: "service_44npndm",
+    TEMPLATE_ID: "template_271p7lq",
+    PUBLIC_KEY: "vTt3s-41N9I_bnmrp",
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
+  }, []);
+
+
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    toast.success("Thank you. We'll be in touch within 48 hours.");
+    setIsSubmitting(true);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    try {
+      const templateParams = {
+        from_name: formData.get("name")?.toString() || "",
+        firstName: formData.get("name")?.toString() || "",
+        email: formData.get("email")?.toString() || "",
+        projectType: formData.get("project")?.toString() || "Not specified",
+        message: formData.get("brief")?.toString() || "",
+        to_email: "rehaanrafael.john@gmail.com",
+      };
+
+      await emailjs.send(
+        EMAILJS_CONFIG.SERVICE_ID,
+        EMAILJS_CONFIG.TEMPLATE_ID,
+        templateParams,
+        {
+          publicKey: EMAILJS_CONFIG.PUBLIC_KEY,
+        }
+      );
+
+      toast.success("Thank you. We'll be in touch within 48 hours.");
+      form.reset();
+    } catch (error: any) {
+      console.error("Form submission error:", error, error?.text);
+      const errorMsg = error?.text || "Failed to send enquiry. Please try again later.";
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -41,38 +78,25 @@ export function Order() {
           <div className="mt-6">
             <label className="eyebrow mb-3 block">Brief</label>
             <textarea
+              name="brief"
               rows={4}
+              required
               placeholder="Describe the piece, the size, and the feeling you're after."
               className="w-full resize-none rounded-xl border border-foreground/10 bg-background/60 px-4 py-3 text-sm placeholder:text-muted-foreground/70 focus:border-foreground/30 focus:outline-none focus:ring-0 transition-colors duration-300"
             />
           </div>
 
-          <div className="mt-6">
-            <label className="eyebrow mb-3 block">Attach a file</label>
-            <label
-              onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-              onDragLeave={() => setDrag(false)}
-              onDrop={onDrop}
-              className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center transition-all duration-500 ease-out-soft ${
-                drag ? "border-foreground/40 bg-foreground/[0.03]" : "border-foreground/15 bg-background/40"
-              }`}
-            >
-              <input type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              <div className="display text-2xl">{file ? file.name : "Drop your file"}</div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {file ? `${(file.size / 1024).toFixed(0)} KB` : ".stl, .obj, .step, .pdf, .jpg — up to 100MB"}
-              </p>
-            </label>
-          </div>
+
 
           <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-foreground/10 pt-8 md:flex-row">
             <p className="text-xs text-muted-foreground">We reply within 48 hours.</p>
             <button
               type="submit"
-              className="group inline-flex items-center gap-2 rounded-full bg-foreground px-7 py-3.5 text-sm font-medium text-background transition-transform duration-500 ease-out-soft hover:scale-[1.02]"
+              disabled={isSubmitting}
+              className="group inline-flex items-center gap-2 rounded-full bg-foreground px-7 py-3.5 text-sm font-medium text-background transition-transform duration-500 ease-out-soft hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100"
             >
-              Send brief
-              <span className="transition-transform duration-500 ease-out-soft group-hover:translate-x-0.5">→</span>
+              {isSubmitting ? "Sending..." : "Send brief"}
+              {!isSubmitting && <span className="transition-transform duration-500 ease-out-soft group-hover:translate-x-0.5">→</span>}
             </button>
           </div>
         </form>
@@ -89,6 +113,7 @@ function Field({ label, name, type = "text", placeholder }: { label: string; nam
         id={name}
         name={name}
         type={type}
+        required
         placeholder={placeholder}
         className="w-full rounded-xl border border-foreground/10 bg-background/60 px-4 py-3 text-sm placeholder:text-muted-foreground/70 focus:border-foreground/30 focus:outline-none focus:ring-0 transition-colors duration-300"
       />
