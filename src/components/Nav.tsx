@@ -1,9 +1,8 @@
 export function Nav() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      <div className="mx-auto mt-4 flex max-w-6xl items-center justify-between rounded-full glass px-5 py-3 shadow-soft">
-        <a href="#top" className="flex items-center gap-2" aria-label="Top"></a>
-        <nav className="hidden items-center gap-8 md:flex">
+      <div className="mx-auto mt-6 flex max-w-xl items-center justify-between rounded-full bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 shadow-soft">
+        <nav className="flex items-center gap-6 pl-2">
           {[
             ["About", "#about"],
             ["Work", "#work"],
@@ -13,7 +12,7 @@ export function Nav() {
             <a
               key={l}
               href={h}
-              className="text-sm text-muted-foreground transition-colors duration-300 hover:text-foreground"
+              className="text-xs font-medium text-white/70 transition-colors duration-300 hover:text-white"
             >
               {l}
             </a>
@@ -21,7 +20,7 @@ export function Nav() {
         </nav>
         <a
           href="#order"
-          className="rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background transition-transform duration-300 ease-out-soft hover:scale-[1.02]"
+          className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black transition-transform duration-300 ease-out-soft hover:scale-[1.05]"
         >
           Start a Project
         </a>

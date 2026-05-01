@@ -11,7 +11,7 @@ export function Footer() {
           <a href="#about" className="hover:text-foreground transition-colors duration-300">About</a>
           <a href="#work" className="hover:text-foreground transition-colors duration-300">Work</a>
           <a href="#order" className="hover:text-foreground transition-colors duration-300">Contact</a>
-          <a href="mailto:hello@dreamforge.studio" className="hover:text-foreground transition-colors duration-300">hello@dreamforge.studio</a>
+          <a href="mailto:dreamforge3dprint@gmail.com" className="hover:text-foreground transition-colors duration-300">dreamforge3dprint@gmail.com</a>
         </div>
       </div>
     </footer>

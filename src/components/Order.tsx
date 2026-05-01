@@ -6,9 +6,9 @@ export function Order() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const EMAILJS_CONFIG = {
-    SERVICE_ID: "service_44npndm",
-    TEMPLATE_ID: "template_271p7lq",
-    PUBLIC_KEY: "vTt3s-41N9I_bnmrp",
+    SERVICE_ID: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+    TEMPLATE_ID: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+    PUBLIC_KEY: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
   };
 
   useEffect(() => {

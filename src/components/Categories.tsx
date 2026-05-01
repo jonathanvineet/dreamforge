@@ -49,11 +49,6 @@ export function Categories() {
                   <h3 className="display text-2xl font-medium tracking-tight">{it.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{it.desc}</p>
                 </div>
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-foreground/10 text-foreground transition-all duration-500 group-hover:border-foreground/30 group-hover:bg-foreground/5">
-                  <span className="transition-transform duration-500 ease-out-soft group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
-                    ↗
-                  </span>
-                </div>
               </div>
             </article>
           ))}

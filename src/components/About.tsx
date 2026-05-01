@@ -29,20 +29,7 @@ export function About() {
             print is calibrated by hand, finished with immense patience, and shipped
             only when it feels right to hold.
           </p>
-          <div className="reveal reveal-delay-3 mt-12 grid grid-cols-3 gap-8 border-t border-foreground/10 pt-10">
-            {[
-              ["120+", "Pieces shipped"],
-              ["18", "Materials"],
-              ["0.05mm", "Tolerance"],
-            ].map(([n, l]) => (
-              <div key={l}>
-                <div className="display text-3xl text-foreground md:text-4xl">{n}</div>
-                <div className="mt-2 text-xs uppercase tracking-widest text-muted-foreground font-medium">
-                  {l}
-                </div>
-              </div>
-            ))}
-          </div>
+
         </div>
 
         <div className="lg:col-span-6 relative h-[600px] md:h-[700px] w-full">
