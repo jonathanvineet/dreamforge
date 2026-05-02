@@ -1,5 +1,5 @@
 # Dreamforge
-
+A website for DREAMFORGE our own 3d printing brand
 A small, modern React + TypeScript starter built with Vite, Tailwind CSS, and a collection
 of reusable components and hooks. Includes a testing setup with Vitest and a variety of
 UI primitives under `src/components/ui/` for rapid prototyping.
