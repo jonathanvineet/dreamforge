@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&family=Syne:wght@700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -130,18 +130,52 @@
     animation: float 9s ease-in-out infinite;
   }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-14px); }
+  @keyframes glassFillWave {
+    0%, 100% {
+      opacity: 0.05;
+      transform: scale(0.98);
+      filter: blur(4px);
+    }
+    50% {
+      opacity: 0.95;
+      transform: scale(1);
+      filter: blur(0px);
+    }
   }
 
-  .grain::after {
-    content: "";
-    position: absolute; inset: 0;
+  .animate-glass-fill {
+    animation: glassFillWave 6s ease-in-out infinite;
+  }
+
+  .text-mask-outline {
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* The solid white glass outline */
+  .text-mask-outline::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    color: transparent;
+    -webkit-text-stroke: 2px rgba(255, 255, 255, 0.95);
     pointer-events: none;
-    background-image: radial-gradient(hsl(24 10% 12% / 0.025) 1px, transparent 1px);
-    background-size: 3px 3px;
-    mix-blend-mode: multiply;
-    opacity: 0.4;
+    z-index: 10;
+  }
+
+  /* The cyan chromatic offset */
+  .text-mask-outline::before {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(0, 229, 255, 0.7);
+    transform: translate(-5px, 3px);
+    pointer-events: none;
+    z-index: 5;
   }
 }
+
+

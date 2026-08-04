@@ -2,9 +2,8 @@ import { useReveal } from "@/hooks/use-reveal";
 import { Nav } from "@/components/Nav";
 import { Hero } from "@/components/Hero";
 import { About } from "@/components/About";
+import { BentoShowcase } from "@/components/BentoShowcase";
 import { Categories } from "@/components/Categories";
-import { Process } from "@/components/Process";
-import { Showcase } from "@/components/Showcase";
 import { Order } from "@/components/Order";
 import { Footer } from "@/components/Footer";
 import { CursorDot } from "@/components/CursorDot";
@@ -21,15 +20,20 @@ const Index = () => {
     m.setAttribute("content", desc);
   }, []);
 
+  const handleGetQuote = () => {
+    const orderElem = document.getElementById("order");
+    if (orderElem) {
+      orderElem.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <main className="relative min-h-screen overflow-x-clip bg-background text-foreground">
       <CursorDot />
-      <Nav />
-      <Hero />
+      <Hero onGetQuote={handleGetQuote} />
       <About />
+      <BentoShowcase />
       <Categories />
-      <Process />
-      <Showcase />
       <Order />
       <Footer />
     </main>

@@ -7,9 +7,8 @@ export function Nav() {
 
   const navLinks = [
     ["About", "#about"],
-    ["Work", "#work"],
-    ["Process", "#process"],
-    ["Showcase", "#showcase"],
+    ["Projects", "#project-showcase"],
+    ["Services", "#categories"],
   ];
 
   return (

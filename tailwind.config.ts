@@ -16,6 +16,8 @@ export default {
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+        outfit: ['Outfit', 'sans-serif'],
+        syne: ['Syne', 'sans-serif'],
       },
       colors: {
         surface: "hsl(var(--surface))",
