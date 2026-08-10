@@ -12,10 +12,10 @@ export function Order() {
   };
 
   useEffect(() => {
-    emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
-  }, []);
-
-
+    if (EMAILJS_CONFIG.PUBLIC_KEY) {
+      emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
+    }
+  }, [EMAILJS_CONFIG.PUBLIC_KEY]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,9 +45,10 @@ export function Order() {
 
       toast.success("Thank you. We'll be in touch within 48 hours.");
       form.reset();
-    } catch (error: any) {
-      console.error("Form submission error:", error, error?.text);
-      const errorMsg = error?.text || "Failed to send enquiry. Please try again later.";
+    } catch (error: unknown) {
+      console.error("Form submission error:", error);
+      const err = error as { text?: string };
+      const errorMsg = err?.text || "Failed to send enquiry. Please try again later.";
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
