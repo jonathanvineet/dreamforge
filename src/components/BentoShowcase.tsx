@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ZoomIn, ArrowRight, Sparkles } from "lucide-react";
+import { X, ZoomIn, ArrowRight, Sparkles, Grid } from "lucide-react";
 
 export interface ProjectItem {
   id: string;
@@ -15,7 +15,7 @@ export const PRINT_PROJECTS: ProjectItem[] = [
   { id: "messi", title: "Lionel Messi Bust", category: "Pop Culture & Sports", image: "/3DPrintPics/messi1.png", spanClass: "col-span-1 row-span-1" },
   { id: "ironman-helmet", title: "Iron Man Helmet", category: "Pop Culture & Sports", image: "/3DPrintPics/ironman.jpeg", spanClass: "col-span-1 row-span-1" },
   { id: "luffy", title: "Monkey D. Luffy", category: "Gaming & Anime", image: "/3DPrintPics/Luffy.png", spanClass: "col-span-2 row-span-1" },
-  { id: "harry-potter", title: "Harry Potter Bust", category: "Pop Culture & Sports", image: "/3DPrintPics/HarryPotter.png", spanClass: "col-span-1 row-span-1" },
+  { id: "spiderman", title: "Spider-Man Figurine", category: "Pop Culture & Sports", image: "/3DPrintPics/spiderman.jpeg", spanClass: "col-span-2 row-span-2" },
   { id: "ronaldo", title: "Cristiano Ronaldo Bust", category: "Pop Culture & Sports", image: "/3DPrintPics/ronaldo.png", spanClass: "col-span-2 row-span-2" },
   { id: "lion", title: "Low-Poly Lion", category: "Sculptures & Decor", image: "/3DPrintPics/Lion.png", spanClass: "col-span-1 row-span-1" },
   { id: "mewtwo", title: "Mewtwo Figurine", category: "Gaming & Anime", image: "/3DPrintPics/Mewto.png", spanClass: "col-span-1 row-span-1" },
@@ -25,7 +25,7 @@ export const PRINT_PROJECTS: ProjectItem[] = [
   { id: "cat", title: "Faceted Cat Statue", category: "Sculptures & Decor", image: "/3DPrintPics/Cat.png", spanClass: "col-span-1 row-span-1" },
   { id: "charmander", title: "Charmander Statue", category: "Gaming & Anime", image: "/3DPrintPics/Charmander.png", spanClass: "col-span-1 row-span-1" },
   { id: "pikachu", title: "Pikachu Statue", category: "Gaming & Anime", image: "/3DPrintPics/Pickachu.jpeg", spanClass: "col-span-1 row-span-1" },
-  { id: "spiderman", title: "Spider-Man Figurine", category: "Pop Culture & Sports", image: "/3DPrintPics/spiderman.jpeg", spanClass: "col-span-2 row-span-2" },
+  { id: "harry-potter", title: "Harry Potter Bust", category: "Pop Culture & Sports", image: "/3DPrintPics/HarryPotter.png", spanClass: "col-span-1 row-span-1" },
   { id: "spiderman2", title: "Spider-Man Wall Pose", category: "Pop Culture & Sports", image: "/3DPrintPics/Spiderman2.jpeg", spanClass: "col-span-1 row-span-1" },
   { id: "batman-spiderman", title: "Batman & Spidey Diorama", category: "Pop Culture & Sports", image: "/3DPrintPics/batman+spiderman.jpeg", spanClass: "col-span-1 row-span-1" },
   { id: "batman0", title: "Batman Bust", category: "Pop Culture & Sports", image: "/3DPrintPics/batman0.jpeg", spanClass: "col-span-1 row-span-1" },
@@ -52,23 +52,11 @@ export const PRINT_PROJECTS: ProjectItem[] = [
   { id: "headphone-stand-2", title: "Dual Headphone Hook", category: "Desk & Functional", image: "/3DPrintPics/headphonestand2.jpeg", spanClass: "col-span-1 row-span-1" },
 ];
 
-const CATEGORIES = [
-  "All Projects",
-  "Gaming & Anime",
-  "Pop Culture & Sports",
-  "Desk & Functional",
-  "Sculptures & Decor",
-  "Custom Gifts & Wearables",
-] as const;
-
 export function BentoShowcase() {
-  const [activeCategory, setActiveCategory] = useState<string>("All Projects");
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
 
-  // Filter projects based on active tab
-  const filteredProjects = activeCategory === "All Projects"
-    ? PRINT_PROJECTS
-    : PRINT_PROJECTS.filter((p) => p.category === activeCategory);
+  // Show a curated selection of 6 featured projects on the home page
+  const featuredProjects = PRINT_PROJECTS.slice(0, 6);
 
   const handleOpenOrder = (title: string) => {
     setSelectedProject(null);
@@ -86,94 +74,70 @@ export function BentoShowcase() {
   };
 
   return (
-    <section id="project-showcase" className="relative py-20 md:py-32 bg-background overflow-hidden border-t border-foreground/5">
+    <section id="project-showcase" className="relative py-20 md:py-28 bg-background overflow-hidden border-t border-foreground/5">
       {/* Ambient background accent */}
-      <div className="pointer-events-none absolute left-1/2 top-1/4 -translate-x-1/2 -z-10 h-[400px] w-[600px] rounded-full blur-[130px] opacity-20 bg-gradient-to-tr from-amber-500/20 to-orange-400/10" />
+      <div className="pointer-events-none absolute left-1/2 top-1/4 -translate-x-1/2 -z-10 h-[350px] w-[550px] rounded-full blur-[120px] opacity-20 bg-gradient-to-tr from-amber-500/20 to-orange-400/10" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        {/* Compact Header */}
-        <div className="mb-10 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 border border-foreground/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                <Sparkles className="w-3 h-3 text-amber-500" />
-                Gallery
-              </span>
-              <span className="block h-px w-8 bg-foreground/10" />
-            </div>
-            <h2 className="display text-3xl sm:text-4xl md:text-5xl text-foreground font-normal tracking-tight">
-              Project Showcase.
-            </h2>
-          </div>
-
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider bg-surface border border-foreground/10 px-3 py-1 rounded-full">
-            {filteredProjects.length} Items
-          </span>
+        {/* Header */}
+        <div className="mb-10">
+          <h2 className="display text-3xl sm:text-4xl md:text-5xl text-foreground font-normal tracking-tight">
+            Project Showcase.
+          </h2>
         </div>
 
-        {/* Category Filters Bar */}
-        <div className="mb-8 flex flex-wrap items-center gap-2">
-          {CATEGORIES.map((cat) => {
-            const count = cat === "All Projects" 
-              ? PRINT_PROJECTS.length 
-              : PRINT_PROJECTS.filter(p => p.category === cat).length;
-
-            const isActive = activeCategory === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ${
-                  isActive
-                    ? "bg-foreground text-background shadow-soft"
-                    : "bg-surface/80 text-foreground-soft hover:bg-surface hover:text-foreground border border-foreground/5"
+        {/* Curated Grid with Fade-Out Transition */}
+        <div className="relative mt-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 grid-flow-dense gap-4 sm:gap-5 auto-rows-[220px] sm:auto-rows-[250px]">
+            {featuredProjects.map((project) => (
+              <div
+                key={project.id}
+                onClick={() => setSelectedProject(project)}
+                className={`group relative cursor-pointer overflow-hidden rounded-2xl border border-foreground/10 bg-surface/40 transition-all duration-300 hover:border-foreground/40 hover:shadow-lift ${
+                  project.spanClass || ""
                 }`}
               >
-                <span>{cat}</span>
-                <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${isActive ? "bg-background/20 text-background" : "text-muted-foreground"}`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                <img
+                  src={project.image}
+                  alt={project.title}
+                  loading="lazy"
+                  className="w-full h-full object-cover object-center transition-transform duration-500 ease-out-soft group-hover:scale-105"
+                />
 
-        {/* Dense Bento Grid - Slightly Larger Pictures & Zero Empty Gaps */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 grid-flow-dense gap-4 sm:gap-5 auto-rows-[220px] sm:auto-rows-[250px] md:auto-rows-[280px]">
-          {filteredProjects.map((project) => (
-            <div
-              key={project.id}
-              onClick={() => setSelectedProject(project)}
-              className={`group relative cursor-pointer overflow-hidden rounded-2xl border border-foreground/10 bg-surface/40 transition-all duration-300 hover:border-foreground/40 hover:shadow-lift ${
-                project.spanClass || ""
-              }`}
-            >
-              <img
-                src={project.image}
-                alt={project.title}
-                loading="lazy"
-                className="w-full h-full object-cover object-center transition-transform duration-500 ease-out-soft group-hover:scale-105"
-              />
-
-              {/* Minimal Dark Hover Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-between p-4">
-                <div className="self-end">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md border border-white/30 shadow-sm">
-                    <ZoomIn className="w-4 h-4" />
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white drop-shadow-md truncate">
-                    {project.title}
-                  </p>
+                {/* Minimal Dark Hover Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-between p-4">
+                  <div className="self-end">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md border border-white/30 shadow-sm">
+                      <ZoomIn className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-amber-300">
+                      {project.category}
+                    </span>
+                    <p className="text-sm font-medium text-white drop-shadow-md truncate">
+                      {project.title}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Gradient Fade Overlay & Show More Button */}
+          <div className="absolute inset-x-0 bottom-0 flex h-64 items-end justify-center bg-gradient-to-t from-background via-background/90 to-transparent pb-8">
+            <a
+              href="/projects"
+              className="group relative inline-flex items-center gap-3 rounded-full bg-foreground px-8 py-4 text-sm font-bold text-background shadow-lift transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_12px_30px_rgba(0,0,0,0.25)]"
+            >
+              <span>Show More Projects</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </a>
+          </div>
         </div>
       </div>
 
-      {/* Clean Lightbox Modal */}
+      {/* Lightbox Modal */}
       {selectedProject && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"

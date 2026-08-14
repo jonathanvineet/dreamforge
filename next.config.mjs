@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // Outputs a Single-Page Application (SPA).
-  distDir: './dist', // Changes the build output directory to `./dist/`.
+  allowedDevOrigins: ['localhost:3000', '127.0.0.1:3000', '192.168.21.141', '192.168.21.179'],
   eslint: {
     ignoreDuringBuilds: true,
   },

@@ -6,9 +6,9 @@ export function Order() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const EMAILJS_CONFIG = {
-    SERVICE_ID: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || import.meta.env?.VITE_EMAILJS_SERVICE_ID || "",
-    TEMPLATE_ID: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || import.meta.env?.VITE_EMAILJS_TEMPLATE_ID || "",
-    PUBLIC_KEY: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || import.meta.env?.VITE_EMAILJS_PUBLIC_KEY || "",
+    SERVICE_ID: (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_EMAILJS_SERVICE_ID) || (import.meta as any).env?.VITE_EMAILJS_SERVICE_ID || "",
+    TEMPLATE_ID: (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID) || (import.meta as any).env?.VITE_EMAILJS_TEMPLATE_ID || "",
+    PUBLIC_KEY: (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY) || (import.meta as any).env?.VITE_EMAILJS_PUBLIC_KEY || "",
   };
 
   useEffect(() => {

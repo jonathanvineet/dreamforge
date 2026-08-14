@@ -14,20 +14,24 @@ export function About() {
   }, [y]);
 
   return (
-    <section id="about" ref={ref} className="relative py-32 md:py-44 overflow-hidden">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-20 px-6 lg:grid-cols-12">
+    <section id="about" ref={ref} className="relative py-32 md:py-44 overflow-hidden bg-background">
+      {/* Black to transparent gradient fade for seamless transition from Hero */}
+      <div className="absolute top-0 left-0 right-0 h-48 sm:h-64 bg-gradient-to-b from-zinc-950 to-transparent pointer-events-none z-0" />
+      
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-20 px-6 lg:grid-cols-12 z-10">
         <div className="lg:col-span-6 z-10">
           <div className="flex items-center gap-4 mb-8">
             <span className="block h-px w-8 bg-foreground/20" />
-            <p className="eyebrow reveal">About the studio</p>
+            <p className="eyebrow reveal">About DreamForge</p>
           </div>
           <h2 className="display reveal reveal-delay-1 text-5xl leading-[1.1] md:text-6xl">
-            A small workshop, obsessed with the details that nobody else notices.
+            We make the things you can&apos;t find anywhere else.
           </h2>
           <p className="reveal reveal-delay-2 mt-8 max-w-lg text-lg leading-relaxed text-foreground-soft">
-            Dream Forge is a quiet space where ideas become tangible objects. Every
-            print is calibrated by hand, finished with immense patience, and shipped
-            only when it feels right to hold.
+            DreamForge started with a simple idea — take something from a screen and turn it into something you can actually hold. From random ideas to custom pieces, we print, experiment and make things we&apos;d genuinely want ourselves.
+          </p>
+          <p className="reveal reveal-delay-3 mt-6 max-w-lg text-sm font-semibold tracking-wide uppercase text-foreground/80">
+            Small workshop. Big obsession with making things right.
           </p>
 
         </div>

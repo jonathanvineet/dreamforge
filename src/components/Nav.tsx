@@ -1,26 +1,35 @@
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { DreamForgeLogo } from "./DreamForgeLogo";
 
 export function Nav() {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const navLinks = [
-    ["About", "#about"],
-    ["Projects", "#project-showcase"],
-    ["Services", "#categories"],
+    ["About", "/#about"],
+    ["Projects", "/projects"],
+    ["Services", "/#categories"],
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
-      <div className="mx-auto mt-6 flex max-w-xl items-center justify-between rounded-full bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 shadow-soft md:rounded-full">
+    <header className="fixed top-0 left-0 right-0 z-50 px-4">
+      <div className="mx-auto mt-6 flex max-w-3xl items-center justify-between rounded-full bg-black/60 backdrop-blur-md border border-white/15 px-5 py-2.5 shadow-xl">
+        {/* Brand Logo & Name */}
+        <a href="/" className="flex items-center gap-2.5 group">
+          <DreamForgeLogo className="w-7 h-7 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
+          <span className="text-sm font-bold tracking-tight text-white group-hover:text-cyan-400 transition-colors">
+            DreamForge
+          </span>
+        </a>
+
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6 pl-2">
+        <nav className="hidden md:flex items-center gap-7">
           {navLinks.map(([l, h]) => (
             <a
               key={l}
               href={h}
-              className="text-xs font-medium text-white/70 transition-colors duration-300 hover:text-white"
+              className="text-xs font-medium text-white/80 transition-colors duration-300 hover:text-white"
             >
               {l}
             </a>
@@ -51,7 +60,7 @@ export function Nav() {
         </button>
 
         <a
-          href="#order"
+          href="/#order"
           className="hidden md:block rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black transition-transform duration-300 ease-out-soft hover:scale-[1.05]"
         >
           Start a Project
@@ -60,7 +69,7 @@ export function Nav() {
 
       {/* Mobile Menu */}
       {isOpen && isMobile && (
-        <div className="md:hidden mt-2 mx-auto max-w-xl rounded-lg bg-black/80 backdrop-blur-md border border-white/10 p-4 space-y-3">
+        <div className="md:hidden mt-2 mx-auto max-w-xl rounded-2xl bg-black/90 backdrop-blur-md border border-white/10 p-5 space-y-4 shadow-2xl">
           <nav className="flex flex-col gap-3">
             {navLinks.map(([l, h]) => (
               <a
@@ -74,7 +83,7 @@ export function Nav() {
             ))}
           </nav>
           <a
-            href="#order"
+            href="/#order"
             className="block rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition-transform duration-300 ease-out-soft hover:scale-[1.05] text-center"
             onClick={() => setIsOpen(false)}
           >

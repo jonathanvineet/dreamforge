@@ -13,8 +13,8 @@ const Index = () => {
   useReveal();
 
   useEffect(() => {
-    document.title = "Dream Forge — Crafting Ideas Into Reality";
-    const desc = "Dream Forge is a refined 3D printing studio creating custom figures, decor, and prototypes for creators, students, and collectors.";
+    document.title = "DreamForge — Custom 3D Printing & Design Studio";
+    const desc = "DreamForge is a refined 3D printing studio creating custom figures, decor, and prototypes for creators, students, and collectors.";
     let m = document.querySelector('meta[name="description"]');
     if (!m) { m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); }
     m.setAttribute("content", desc);
@@ -32,8 +32,8 @@ const Index = () => {
       <CursorDot />
       <Hero onGetQuote={handleGetQuote} />
       <About />
-      <BentoShowcase />
       <Categories />
+      <BentoShowcase />
       <Order />
       <Footer />
     </main>
