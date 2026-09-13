@@ -145,10 +145,32 @@ The typography pairs warm editorial serif display headers with ultra-clean geome
   - *Custom Gifts & Wearables*
 - Inspection Modal: Clicking any item opens an overlay featuring the full image, category badge, and instant `"Request Print"` transfer into the quote section.
 
-#### 5. `Order.tsx` (Project Quote Builder)
-- Dual-channel enquiry pipeline:
-  - **EmailJS Integration:** Automated transmission to `rehaanrafael.john@gmail.com` with client name, email, project type, and brief.
-  - **Direct WhatsApp Bridge:** Pre-filled WhatsApp message generator linking to `+91 8122714827`.
+#### 5. `Order.tsx` (Digital Fabrication & Instant Quote Suite)
+- **Minimalist Studio Aesthetic:**
+  - Whisper-thin hairlines (`border-white/[0.08]`), deep obsidian tones, and generous negative space eliminating visual clutter and heavy badge nesting.
+  - Typographic elegance using Fraunces serif and Outfit/Inter sans with calm, confident hierarchy.
+- **Dual-Mode Workflow Switcher:**
+  - **Upload 3D CAD File:** Direct 3D mesh inspection, telemetry calculation, and instant slicing quote.
+  - **Custom 3D Design:** Bespoke CAD modeling inquiry (category, target dimensions, brief) for users without CAD files.
+- **Client-Side Security & File Validator (`fileValidator.ts`):**
+  - Whitelist enforcement strictly allowing `.stl`, `.3mf`, `.obj`, `.step`, and `.stp` files up to 50MB.
+  - Sanitization against SQL metacharacters (`'`, `"`, `;`, `--`, `/*`), path traversal vectors (`../`), and hidden double extensions.
+- **Industry-Standard Three.js 3D Viewer (`ModelViewer3D.tsx`):**
+  - Powered by **Three.js (`STLLoader` & `OrbitControls`)** loaded via pre-warmed CDN script tags and dynamic fallback.
+  - Natively parses binary and ASCII STL geometries, computes smoothed vertex normals, and centers the mesh automatically.
+  - Calculates precise bounding box telemetry ($X \times Y \times Z$ mm), signed tetrahedral volume ($cm^3$), triangle count, and material weight estimate ($g$).
+  - Studio lighting setup with ambient fill, directional key light, and DreamForge signature laser cyan rim light (`#00E5FF`).
+  - Interactive orbital mouse/touch controls with damping inertia, turntable auto-rotation toggle, wireframe toggle, camera reset, and ground build plate grid.
+- **Streamlined Slicing Controls:**
+  - Manufacturing Process: FDM Filament Extrusion vs SLA Resin Photopolymer.
+  - Material Grade: PLA+, PETG, ABS, Carbon/TPU, Standard Resin, Tough Resin, Optical Clear Resin.
+  - Infill & Resolution: 15% to 100% infill; 0.20mm to 0.05mm layer quality chips.
+  - Finishes: Raw Print, UV Cured & Hand-Sanded, and Primer Coated.
+- **Real-Time Dynamic Indian Rupee (₹ INR) Quote Engine:**
+  - Instant pricing breakdown: unit price, material weight, quantity, and doorstep courier (free for orders above ₹1,200).
+- **Unified Delivery & Customer Checkout:**
+  - Compact, clean fields: Full Name, WhatsApp Contact Number, Street Address / Flat No., City & State, PIN Code, and Notes.
+  - Dual Dispatch: Automated EmailJS transmission to `rehaanrafael.john@gmail.com` + instant WhatsApp order bridge to `+91 8122714827`.
 
 ---
 
