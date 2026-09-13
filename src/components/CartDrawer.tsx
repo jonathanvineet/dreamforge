@@ -182,31 +182,6 @@ export function CartDrawer() {
         {/* Footer */}
         {items.length > 0 && (
           <div className="px-4 pb-6 pt-3 border-t border-white/[0.08] space-y-3">
-            {/* Totals */}
-            <div className="space-y-1.5 text-xs font-mono">
-              <div className="flex justify-between text-zinc-400">
-                <span>Subtotal</span>
-                <span>₹{subtotal.toLocaleString("en-IN")}</span>
-              </div>
-              <div className="flex justify-between text-zinc-400">
-                <span>Shipping</span>
-                <span className={shipping === 0 ? "text-emerald-400" : ""}>
-                  {shipping === 0 ? "Free" : `₹${SHIPPING_COST}`}
-                </span>
-              </div>
-              {shipping > 0 && (
-                <p className="text-[10px] text-zinc-600">
-                  Add ₹{(SHIPPING_THRESHOLD - subtotal).toLocaleString("en-IN")} more for free shipping
-                </p>
-              )}
-              <div className="flex justify-between text-white font-semibold pt-1 border-t border-white/[0.06]">
-                <span>Total</span>
-                <span style={{ fontFamily: "'Fraunces', ui-serif, Georgia, serif" }} className="text-base">
-                  ₹{total.toLocaleString("en-IN")}
-                </span>
-              </div>
-            </div>
-
             {/* CTA */}
             <button
               onClick={handleCheckout}

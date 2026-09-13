@@ -151,3 +151,15 @@ values
   ('Dad Desk Trophy',           'Custom Gifts & Wearables',    999,  '15cm × 8cm × 8cm',     'col-span-1 row-span-1', false, 39, true),
   ('Dual Headphone Hook',       'Desk & Functional',           549,  '22cm × 10cm × 8cm',    'col-span-1 row-span-1', false, 40, true)
 on conflict do nothing;
+
+-- ─────────────────────────────────────────────────────────────────
+-- 7. Add Website Order Columns to ERP orders table
+-- ─────────────────────────────────────────────────────────────────
+ALTER TABLE public.orders 
+ADD COLUMN IF NOT EXISTS customer_phone text,
+ADD COLUMN IF NOT EXISTS customer_email text,
+ADD COLUMN IF NOT EXISTS delivery_address text,
+ADD COLUMN IF NOT EXISTS order_mode text;
+
+-- Allow anonymous inserts for website quotes/orders
+CREATE POLICY "Enable insert for website public" ON public.orders FOR INSERT WITH CHECK (true);

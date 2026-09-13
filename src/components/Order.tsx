@@ -17,6 +17,7 @@ import { BRAND_CONFIG } from "../data/mockData";
 import { validate3DFile, ValidationResult } from "../lib/fileValidator";
 import { ModelViewer3D, ModelMetrics } from "./ModelViewer3D";
 import { useCart } from "../context/CartContext";
+import { supabase } from "../lib/supabase";
 
 type OrderMode = "upload" | "custom_design" | "cart";
 type FilamentColor = "black" | "white" | "grey" | "special";
@@ -251,6 +252,29 @@ export function Order() {
         };
 
     try {
+      // 1. Insert into Supabase ERP Database
+      const dbPayload = {
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        customer_email: customerEmail || null,
+        delivery_address: `${streetAddress}, ${cityState} - PIN: ${pincode}`,
+        order_mode: payload.order_mode,
+        type: "website_order",
+        item_description: mode === "cart" ? (payload as any).items : `${(payload as any).file_name} (${(payload as any).material}, ${(payload as any).layer_height}, ${(payload as any).infill})`,
+        quoted_price: mode === "cart" 
+          ? cartSubtotal + (cartSubtotal > 500 || cartSubtotal === 0 ? 0 : 79)
+          : quote.total,
+        notes: payload.notes,
+        filament_grams: mode === "cart" ? 0 : quote.estGrams * quantity,
+        print_hours: mode === "cart" ? 0 : quote.estPrintHours * quantity,
+      };
+
+      const { error: dbError } = await supabase.from("orders").insert([dbPayload]);
+      if (dbError) {
+        console.error("Supabase insert error:", dbError);
+      }
+
+      // 2. Fallback / Notification via EmailJS
       if (EMAILJS_CONFIG.SERVICE_ID && EMAILJS_CONFIG.TEMPLATE_ID) {
         await emailjs.send(
           EMAILJS_CONFIG.SERVICE_ID,
