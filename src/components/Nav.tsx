@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DreamForgeLogo } from "./DreamForgeLogo";
+import { ShoppingCart } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 
 export function Nav() {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { itemCount, toggleDrawer } = useCart();
 
   const navLinks = [
     ["About", "/#about"],
@@ -59,12 +62,26 @@ export function Nav() {
           />
         </button>
 
-        <a
-          href="/#order"
-          className="hidden md:block rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black transition-transform duration-300 ease-out-soft hover:scale-[1.05]"
-        >
-          Start a Project
-        </a>
+        <div className="hidden md:flex items-center gap-4">
+          <button
+            onClick={toggleDrawer}
+            className="relative flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+            aria-label={`Open cart (${itemCount} items)`}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-cyan-500 text-white text-[10px] font-bold font-mono">
+                {itemCount > 9 ? "9+" : itemCount}
+              </span>
+            )}
+          </button>
+          <a
+            href="/#order"
+            className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black transition-transform duration-300 ease-out-soft hover:scale-[1.05]"
+          >
+            Start a Project
+          </a>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -82,13 +99,28 @@ export function Nav() {
               </a>
             ))}
           </nav>
-          <a
-            href="/#order"
-            className="block rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition-transform duration-300 ease-out-soft hover:scale-[1.05] text-center"
-            onClick={() => setIsOpen(false)}
-          >
-            Start a Project
-          </a>
+          
+          <div className="border-t border-white/10 pt-4 flex items-center gap-4">
+            <button
+              onClick={() => { setIsOpen(false); toggleDrawer(); }}
+              className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white shrink-0"
+              aria-label={`Open cart (${itemCount} items)`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-cyan-500 text-white text-[10px] font-bold font-mono">
+                  {itemCount > 9 ? "9+" : itemCount}
+                </span>
+              )}
+            </button>
+            <a
+              href="/#order"
+              className="flex-1 rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition-transform duration-300 ease-out-soft hover:scale-[1.05] text-center"
+              onClick={() => setIsOpen(false)}
+            >
+              Start a Project
+            </a>
+          </div>
         </div>
       )}
     </header>

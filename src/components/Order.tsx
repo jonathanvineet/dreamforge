@@ -11,12 +11,14 @@ import {
   Send,
   Trash2,
   PenTool,
+  ShoppingCart,
 } from "lucide-react";
 import { BRAND_CONFIG } from "../data/mockData";
 import { validate3DFile, ValidationResult } from "../lib/fileValidator";
 import { ModelViewer3D, ModelMetrics } from "./ModelViewer3D";
+import { useCart } from "../context/CartContext";
 
-type OrderMode = "upload" | "custom_design";
+type OrderMode = "upload" | "custom_design" | "cart";
 type FilamentColor = "black" | "white" | "grey" | "special";
 
 const MATERIAL_PLA = {
@@ -54,6 +56,7 @@ const POST_FINISHES = [
 export function Order() {
   const [mode, setMode] = useState<OrderMode>("upload");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { items: cartItems, subtotal: cartSubtotal, removeItem } = useCart();
 
   // Uploaded 3D File State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -109,6 +112,12 @@ export function Order() {
       emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
     }
   }, [EMAILJS_CONFIG.PUBLIC_KEY]);
+
+  useEffect(() => {
+    const handleOpenCart = () => setMode("cart");
+    window.addEventListener("dreamforge:open-cart-tab", handleOpenCart);
+    return () => window.removeEventListener("dreamforge:open-cart-tab", handleOpenCart);
+  }, []);
 
   const handleFileSelect = (file: File) => {
     const result = validate3DFile(file);
@@ -196,6 +205,11 @@ export function Order() {
       toast.error("Please upload a 3D file (.stl, .3mf, .obj, .step) first.");
       return;
     }
+    
+    if (mode === "cart" && cartItems.length === 0) {
+      toast.error("Your cart is empty.");
+      return;
+    }
 
     if (!customerName || !customerPhone || !streetAddress || !pincode) {
       toast.error("Please provide your name, phone number, and delivery address.");
@@ -204,25 +218,37 @@ export function Order() {
 
     setIsSubmitting(true);
 
-    const payload = {
-      order_mode: mode,
-      customer_name: customerName,
-      customer_phone: customerPhone,
-      customer_email: customerEmail || "N/A",
-      delivery_address: `${streetAddress}, ${cityState} - PIN: ${pincode}`,
-      file_name: selectedFile ? fileValidation?.sanitizedName : "Custom 3D Design",
-      file_size: selectedFile ? fileValidation?.sizeFormatted : "N/A",
-      material: MATERIAL_PLA.name,
-      filament_color: getActiveFilamentLabel(),
-      infill: `${infill}%`,
-      layer_height: layerHeight,
-      finish: postFinish,
-      quantity: quantity,
-      estimated_weight: `${quote.estGrams * quantity}g`,
-      quote_total: `₹${quote.total.toLocaleString("en-IN")}`,
-      notes: specialInstructions || customBrief || "None",
-      timestamp: new Date().toISOString(),
-    };
+    const payload = mode === "cart" 
+      ? {
+          order_mode: "cart",
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          customer_email: customerEmail || "N/A",
+          delivery_address: `${streetAddress}, ${cityState} - PIN: ${pincode}`,
+          items: cartItems.map(i => `${i.quantity}x ${i.title} - ₹${i.lineTotal}`).join("\n"),
+          quote_total: `₹${(cartSubtotal + (cartSubtotal > 500 || cartSubtotal === 0 ? 0 : 79)).toLocaleString("en-IN")}`,
+          notes: specialInstructions || "None",
+          timestamp: new Date().toISOString(),
+        }
+      : {
+          order_mode: mode,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          customer_email: customerEmail || "N/A",
+          delivery_address: `${streetAddress}, ${cityState} - PIN: ${pincode}`,
+          file_name: selectedFile ? fileValidation?.sanitizedName : "Custom 3D Design",
+          file_size: selectedFile ? fileValidation?.sizeFormatted : "N/A",
+          material: MATERIAL_PLA.name,
+          filament_color: getActiveFilamentLabel(),
+          infill: `${infill}%`,
+          layer_height: layerHeight,
+          finish: postFinish,
+          quantity: quantity,
+          estimated_weight: `${quote.estGrams * quantity}g`,
+          quote_total: `₹${quote.total.toLocaleString("en-IN")}`,
+          notes: specialInstructions || customBrief || "None",
+          timestamp: new Date().toISOString(),
+        };
 
     try {
       if (EMAILJS_CONFIG.SERVICE_ID && EMAILJS_CONFIG.TEMPLATE_ID) {
@@ -258,25 +284,36 @@ export function Order() {
   };
 
   const generateWhatsAppUrl = () => {
-    const msg = [
-      `*New 3D Print Order — DreamForge*`,
-      `*Customer:* ${customerName || "Customer"} (${customerPhone || "N/A"})`,
-      `*Address:* ${streetAddress ? `${streetAddress}, ${cityState} - ${pincode}` : "Pending"}`,
-      `---------------------------------`,
-      `*File:* ${selectedFile ? fileValidation?.sanitizedName : "Custom 3D Design"}`,
-      `*Material:* PLA High Precision`,
-      `*Color:* ${getActiveFilamentLabel()}`,
-      `*Infill:* ${infill}% (Custom) | *Layer:* ${layerHeight}`,
-      `*Finish:* ${postFinish}`,
-      `*Quantity:* ${quantity}`,
-      `*Est. Total:* ₹${quote.total.toLocaleString("en-IN")}`,
-      specialInstructions ? `*Notes:* ${specialInstructions}` : "",
-      customBrief ? `*Brief:* ${customBrief}` : "",
-      `---------------------------------`,
-      `Hi DreamForge! I'd like to confirm this 3D print request.`,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const msg = mode === "cart"
+      ? [
+          `*New Showcase Order — DreamForge*`,
+          `*Customer:* ${customerName || "Customer"} (${customerPhone || "N/A"})`,
+          `*Address:* ${streetAddress ? `${streetAddress}, ${cityState} - ${pincode}` : "Pending"}`,
+          `---------------------------------`,
+          `*Items:*`,
+          ...cartItems.map(i => `- ${i.quantity}x ${i.title}`),
+          `*Est. Total:* ₹${(cartSubtotal + (cartSubtotal > 500 || cartSubtotal === 0 ? 0 : 79)).toLocaleString("en-IN")}`,
+          specialInstructions ? `*Notes:* ${specialInstructions}` : "",
+          `---------------------------------`,
+          `Hi DreamForge! I'd like to confirm this order.`,
+        ].filter(Boolean).join("\n")
+      : [
+          `*New 3D Print Order — DreamForge*`,
+          `*Customer:* ${customerName || "Customer"} (${customerPhone || "N/A"})`,
+          `*Address:* ${streetAddress ? `${streetAddress}, ${cityState} - ${pincode}` : "Pending"}`,
+          `---------------------------------`,
+          `*File:* ${selectedFile ? fileValidation?.sanitizedName : "Custom 3D Design"}`,
+          `*Material:* PLA High Precision`,
+          `*Color:* ${getActiveFilamentLabel()}`,
+          `*Infill:* ${infill}% (Custom) | *Layer:* ${layerHeight}`,
+          `*Finish:* ${postFinish}`,
+          `*Quantity:* ${quantity}`,
+          `*Est. Total:* ₹${quote.total.toLocaleString("en-IN")}`,
+          specialInstructions ? `*Notes:* ${specialInstructions}` : "",
+          customBrief ? `*Brief:* ${customBrief}` : "",
+          `---------------------------------`,
+          `Hi DreamForge! I'd like to confirm this 3D print request.`,
+        ].filter(Boolean).join("\n");
 
     return `https://wa.me/${BRAND_CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`;
   };
@@ -314,6 +351,7 @@ export function Order() {
             {[
               { id: "upload" as OrderMode, icon: <Upload className="w-3.5 h-3.5" />, label: "Upload File" },
               { id: "custom_design" as OrderMode, icon: <PenTool className="w-3.5 h-3.5" />, label: "Custom Design" },
+              { id: "cart" as OrderMode, icon: <ShoppingCart className="w-3.5 h-3.5" />, label: `Showcase Cart (${cartItems.length})` },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -338,7 +376,49 @@ export function Order() {
           {/* LEFT COLUMN */}
           <div className="lg:col-span-7 space-y-8">
 
-            {mode === "upload" ? (
+            {mode === "cart" ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 pb-5 border-b border-white/[0.06]">
+                  <ShoppingCart className="w-4 h-4 text-cyan-400" />
+                  <span className="text-sm text-zinc-300">Your Showcase Items</span>
+                </div>
+                {cartItems.length === 0 ? (
+                  <div className="py-12 text-center border border-dashed border-white/[0.1] rounded-xl text-zinc-500 text-sm">
+                    Your cart is empty. Browse the showcase to add items.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {cartItems.map((item) => (
+                      <div key={item.productId} className="flex gap-4 p-4 rounded-xl border border-white/[0.08] bg-white/[0.02]">
+                        {item.image ? (
+                          <img src={item.image} alt={item.title} className="w-16 h-16 rounded-lg object-cover bg-zinc-900" />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-zinc-900 flex items-center justify-center">
+                            <ShoppingCart className="w-5 h-5 text-zinc-700" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">{item.title}</p>
+                          <p className="text-xs font-mono text-zinc-400 mt-1">
+                            {item.quantity}x
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <p className="text-xs font-mono font-semibold text-white">₹{item.lineTotal.toLocaleString("en-IN")}</p>
+                            <button
+                              type="button"
+                              onClick={() => removeItem(item.productId)}
+                              className="text-xs text-zinc-500 hover:text-rose-400"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : mode === "upload" ? (
               <>
                 {/* File Drop Zone / 3D Viewer */}
                 {!selectedFile ? (
@@ -624,20 +704,39 @@ export function Order() {
                   className="text-[2.8rem] font-light leading-none tracking-tight text-white mb-3"
                   style={{ fontFamily: "'Fraunces', ui-serif, Georgia, serif" }}
                 >
-                  ₹{quote.total.toLocaleString("en-IN")}
+                  ₹{(mode === "cart" 
+                      ? cartSubtotal + (cartSubtotal > 500 || cartSubtotal === 0 ? 0 : 79)
+                      : (mode === "upload" && !selectedFile) || mode === "custom_design"
+                        ? 0
+                        : quote.total).toLocaleString("en-IN")}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-zinc-500 font-mono">
-                  <span>PLA</span>
-                  <span>·</span>
-                  <span className="capitalize">{getActiveFilamentLabel()}</span>
-                  <span>·</span>
-                  <span>~{quote.estGrams * quantity}g</span>
-                  <span>·</span>
-                  <span>{quantity} {quantity > 1 ? "units" : "unit"}</span>
-                  {quote.estimatedShipping === 0 ? (
-                    <><span>·</span><span className="text-emerald-400">Free shipping</span></>
+                  {mode === "cart" ? (
+                    <>
+                      <span>{cartItems.length} {cartItems.length === 1 ? "item" : "items"}</span>
+                      {cartSubtotal > 500 || cartSubtotal === 0 ? (
+                        <><span>·</span><span className="text-emerald-400">Free shipping</span></>
+                      ) : (
+                        <><span>·</span><span>+ ₹79 courier</span></>
+                      )}
+                    </>
+                  ) : (mode === "upload" && !selectedFile) || mode === "custom_design" ? (
+                    <span>Awaiting details</span>
                   ) : (
-                    <><span>·</span><span>+ ₹79 courier</span></>
+                    <>
+                      <span>PLA</span>
+                      <span>·</span>
+                      <span className="capitalize">{getActiveFilamentLabel()}</span>
+                      <span>·</span>
+                      <span>~{quote.estGrams * quantity}g</span>
+                      <span>·</span>
+                      <span>{quantity} {quantity > 1 ? "units" : "unit"}</span>
+                      {quote.estimatedShipping === 0 ? (
+                        <><span>·</span><span className="text-emerald-400">Free shipping</span></>
+                      ) : (
+                        <><span>·</span><span>+ ₹79 courier</span></>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

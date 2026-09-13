@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight, MessageSquare, Play, Pause } from 'lucide-react';
+import { ArrowRight, MessageSquare, Play, Pause, ShoppingCart } from 'lucide-react';
 import { BRAND_CONFIG } from '../data/mockData';
 import { DreamForgeLogo } from './DreamForgeLogo';
+import { useCart } from '../context/CartContext';
 
 interface HeroProps {
   onGetQuote?: () => void;
@@ -11,6 +12,7 @@ export const Hero: React.FC<HeroProps> = ({ onGetQuote }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
+  const { itemCount, toggleDrawer } = useCart();
 
   const titleText = "DREAMFORGE";
 
@@ -121,6 +123,18 @@ export const Hero: React.FC<HeroProps> = ({ onGetQuote }) => {
           <a href="#categories" className="hover:text-[#00E5FF] transition-colors tracking-widest">SERVICES</a>
           <a href="#showcase" className="hover:text-[#00E5FF] transition-colors tracking-widest">PORTFOLIO</a>
           <a href="#process" className="hover:text-[#00E5FF] transition-colors tracking-widest">PROCESS</a>
+          <button
+            onClick={toggleDrawer}
+            className="relative flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+            aria-label={`Open cart (${itemCount} items)`}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#00E5FF] text-black text-[10px] font-bold font-mono">
+                {itemCount > 9 ? "9+" : itemCount}
+              </span>
+            )}
+          </button>
           <button 
             onClick={handleGetQuote} 
             className="px-5 py-2 rounded-full border border-[#00E5FF]/60 text-[#00E5FF] hover:bg-[#00E5FF] hover:text-black transition-all font-semibold tracking-widest cursor-pointer"

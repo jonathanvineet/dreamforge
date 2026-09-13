@@ -7,28 +7,33 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import Index from "./views/Index";
 import ProjectsPage from "./views/ProjectsPage";
 import NotFound from "./views/NotFound";
+import { CartProvider } from "./context/CartContext";
+import { CartDrawer } from "./components/CartDrawer";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/showcase" element={<ProjectsPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-      <WhatsAppButton
-        phoneNumber="918122714827"
-        message="Hi, I'm interested in your services!"
-      />
-    </TooltipProvider>
+    <CartProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/showcase" element={<ProjectsPage />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+        <CartDrawer />
+        <WhatsAppButton
+          phoneNumber="918122714827"
+          message="Hi, I'm interested in your services!"
+        />
+      </TooltipProvider>
+    </CartProvider>
   </QueryClientProvider>
 );
 
