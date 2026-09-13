@@ -14,8 +14,8 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-12">
           {/* Brand Column */}
           <div className="lg:col-span-5 space-y-3">
-            <a href="#" className="flex items-center gap-2.5 group inline-flex">
-              <DreamForgeLogo className="w-6 h-6 transition-transform duration-300 group-hover:scale-105" />
+            <a href="/" className="flex items-center gap-2.5 group inline-flex">
+              <DreamForgeLogo className="w-8 h-8 transition-transform duration-300 group-hover:scale-105" />
               <span className="text-base font-bold tracking-tight text-white">
                 DreamForge
               </span>

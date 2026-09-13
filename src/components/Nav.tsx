@@ -17,7 +17,7 @@ export function Nav() {
       <div className="mx-auto mt-6 flex max-w-3xl items-center justify-between rounded-full bg-black/60 backdrop-blur-md border border-white/15 px-5 py-2.5 shadow-xl">
         {/* Brand Logo & Name */}
         <a href="/" className="flex items-center gap-2.5 group">
-          <DreamForgeLogo className="w-7 h-7 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
+          <DreamForgeLogo className="w-8 h-8 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
           <span className="text-sm font-bold tracking-tight text-white group-hover:text-cyan-400 transition-colors">
             DreamForge
           </span>

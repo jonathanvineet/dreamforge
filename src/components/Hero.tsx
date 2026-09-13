@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight, MessageSquare, Play, Pause } from 'lucide-react';
 import { BRAND_CONFIG } from '../data/mockData';
+import { DreamForgeLogo } from './DreamForgeLogo';
 
 interface HeroProps {
   onGetQuote?: () => void;
@@ -107,7 +108,14 @@ export const Hero: React.FC<HeroProps> = ({ onGetQuote }) => {
       </div>
 
       {/* 2. Top Bar Header */}
-      <header className="relative z-20 w-full px-6 lg:px-12 pt-6 flex items-center justify-end font-mono text-xs tracking-wider">
+      <header className="relative z-20 w-full px-6 lg:px-12 pt-6 flex items-center justify-between font-mono text-xs tracking-wider">
+        <a href="/" className="flex items-center gap-2.5 group">
+          <DreamForgeLogo className="w-8 h-8 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
+          <span className="text-sm font-bold font-sans tracking-tight text-white group-hover:text-[#00E5FF] transition-colors">
+            DreamForge
+          </span>
+        </a>
+
         <nav className="hidden md:flex items-center gap-8 uppercase text-xs font-medium text-zinc-300">
           <a href="#about" className="hover:text-[#00E5FF] transition-colors tracking-widest">ABOUT</a>
           <a href="#categories" className="hover:text-[#00E5FF] transition-colors tracking-widest">SERVICES</a>

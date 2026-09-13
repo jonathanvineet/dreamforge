@@ -5,6 +5,7 @@ import { PRINT_PROJECTS, ProjectItem } from "@/components/BentoShowcase";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { CursorDot } from "@/components/CursorDot";
+import { DreamForgeLogo } from "@/components/DreamForgeLogo";
 
 const CATEGORIES = [
   "All Projects",
@@ -39,7 +40,14 @@ export default function ProjectsPage() {
     <main className="relative min-h-screen overflow-x-clip bg-background text-foreground pb-16">
       <CursorDot />
       
-      <header className="relative z-20 w-full px-6 lg:px-12 pt-6 pb-12 flex items-center justify-end font-mono text-xs tracking-wider">
+      <header className="relative z-20 w-full px-6 lg:px-12 pt-6 pb-12 flex items-center justify-between font-mono text-xs tracking-wider">
+        <a href="/" className="flex items-center gap-2.5 group">
+          <DreamForgeLogo className="w-8 h-8 transition-transform duration-300 group-hover:scale-105" />
+          <span className="text-sm font-bold font-sans tracking-tight text-foreground">
+            DreamForge
+          </span>
+        </a>
+
         <nav className="hidden md:flex items-center gap-8 uppercase text-xs font-medium text-zinc-500">
           <a href="/#about" className="hover:text-black transition-colors tracking-widest">ABOUT</a>
           <a href="/#categories" className="hover:text-black transition-colors tracking-widest">SERVICES</a>

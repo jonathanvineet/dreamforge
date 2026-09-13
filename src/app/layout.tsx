@@ -4,9 +4,12 @@ export const metadata: Metadata = {
   title: "DreamForge — Custom 3D Printing & Design Studio",
   description: "DreamForge provides premium custom 3D printing, prototyping, resin figures, and high-precision CAD modeling services.",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
-    apple: "/logo.svg",
+    icon: "/logo/DreamForge_LOGO.png",
+    shortcut: "/logo/DreamForge_LOGO.png",
+    apple: "/logo/DreamForge_LOGO.png",
+  },
+  openGraph: {
+    images: ["/logo/DreamForge_LOGO.png"],
   },
 };
 
@@ -18,8 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="alternate icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" href="/logo/DreamForge_LOGO.png" />
+        <link rel="shortcut icon" type="image/png" href="/logo/DreamForge_LOGO.png" />
+        <link rel="apple-touch-icon" href="/logo/DreamForge_LOGO.png" />
       </head>
       <body>
         <div id="root">{children}</div>
