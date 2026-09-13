@@ -16,6 +16,7 @@ interface ModelViewer3DProps {
   file: File | null;
   materialDensity?: number; // g/cm3 (default: 1.24 for PLA)
   infillPercent?: number; // e.g. 20
+  filamentColor?: string; // "black" | "white" | "special"
   onMetricsComputed?: (metrics: ModelMetrics) => void;
   className?: string;
 }
@@ -111,10 +112,27 @@ async function ensureThreeJS(): Promise<ThreeBundle> {
   };
 }
 
+function getFilamentColorHex(color?: string): { hex: number; roughness: number; metalness: number } {
+  if (color === "black") {
+    return { hex: 0x222328, roughness: 0.45, metalness: 0.15 };
+  }
+  if (color === "white") {
+    return { hex: 0xf5f6f8, roughness: 0.32, metalness: 0.1 };
+  }
+  if (color === "grey") {
+    return { hex: 0x82868e, roughness: 0.35, metalness: 0.2 };
+  }
+  if (color === "special") {
+    return { hex: 0xd4af37, roughness: 0.28, metalness: 0.35 }; // Silk Gold
+  }
+  return { hex: 0x222328, roughness: 0.45, metalness: 0.15 };
+}
+
 export const ModelViewer3D: React.FC<ModelViewer3DProps> = ({
   file,
   materialDensity = 1.24,
   infillPercent = 20,
+  filamentColor = "black",
   onMetricsComputed,
   className = "",
 }) => {
@@ -142,6 +160,17 @@ export const ModelViewer3D: React.FC<ModelViewer3DProps> = ({
       meshRef.current.material.needsUpdate = true;
     }
   }, [isWireframe]);
+
+  // Dynamic Filament Color on active mesh
+  useEffect(() => {
+    if (meshRef.current && meshRef.current.material) {
+      const { hex, roughness, metalness } = getFilamentColorHex(filamentColor);
+      meshRef.current.material.color.setHex(hex);
+      meshRef.current.material.roughness = roughness;
+      meshRef.current.material.metalness = metalness;
+      meshRef.current.material.needsUpdate = true;
+    }
+  }, [filamentColor]);
 
   // Toggle Turntable on OrbitControls
   useEffect(() => {
@@ -331,11 +360,12 @@ export const ModelViewer3D: React.FC<ModelViewer3DProps> = ({
             const maxDim = Math.max(size.x, size.y, size.z) || 1;
             const targetScale = 2.0 / maxDim;
 
-            // Luxury satin finish material
+            // Luxury satin finish material matching chosen filament
+            const { hex, roughness, metalness } = getFilamentColorHex(filamentColor);
             const material = new THREE.MeshStandardMaterial({
-              color: 0xebedf0,
-              roughness: 0.32,
-              metalness: 0.12,
+              color: hex,
+              roughness,
+              metalness,
               wireframe: isWireframe,
             });
 

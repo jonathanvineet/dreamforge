@@ -161,11 +161,13 @@ The typography pairs warm editorial serif display headers with ultra-clean geome
   - Calculates precise bounding box telemetry ($X \times Y \times Z$ mm), signed tetrahedral volume ($cm^3$), triangle count, and material weight estimate ($g$).
   - Studio lighting setup with ambient fill, directional key light, and DreamForge signature laser cyan rim light (`#00E5FF`).
   - Interactive orbital mouse/touch controls with damping inertia, turntable auto-rotation toggle, wireframe toggle, camera reset, and ground build plate grid.
-- **Streamlined Slicing Controls:**
-  - Manufacturing Process: FDM Filament Extrusion vs SLA Resin Photopolymer.
-  - Material Grade: PLA+, PETG, ABS, Carbon/TPU, Standard Resin, Tough Resin, Optical Clear Resin.
-  - Infill & Resolution: 15% to 100% infill; 0.20mm to 0.05mm layer quality chips.
-  - Finishes: Raw Print, UV Cured & Hand-Sanded, and Primer Coated.
+- **Streamlined PLA Fabrication Profile:**
+  - **Material:** PLA High Precision exclusively (density 1.24 g/cm³, ₹6.5/g) for maximum dimensional stability, crisp detail, and strength.
+  - **Filament Color Selection:** Black (matte stealth), White (crisp pure), Grey (industrial slate), and Special Request (custom color, silk finish, or glow with custom note input).
+  - **Color-Synced 3D Preview:** The Three.js viewer dynamically adapts its mesh material to match the selected filament color in real-time.
+  - **Custom Infill Tuning:** Flexible multi-mode infill input featuring quick presets (15%, 20%, 50%, 100%), smooth slider range (5% to 100%), and direct numeric percentage input.
+  - **Layer Resolutions:** 0.20mm Standard (Balanced & crisp), 0.12mm Fine (Smooth figurine fidelity), and 0.28mm Draft (Fast functional build).
+  - **Finishes:** Standard Raw Print (Support Cleaned), Hand-Sanded & Smoothed, and Primer Coated (Ready to Paint).
 - **Real-Time Dynamic Indian Rupee (₹ INR) Quote Engine:**
   - Instant pricing breakdown: unit price, material weight, quantity, and doorstep courier (free for orders above ₹1,200).
 - **Unified Delivery & Customer Checkout:**

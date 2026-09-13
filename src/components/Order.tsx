@@ -6,60 +6,49 @@ import emailjs from "@emailjs/browser";
 import {
   Upload,
   FileCheck,
-  Cpu,
-  Layers,
   Sparkles,
   MessageSquare,
   Send,
-  MapPin,
-  User,
-  Phone,
-  Mail,
   Trash2,
   PenTool,
-  ArrowRight,
-  ShieldCheck,
 } from "lucide-react";
 import { BRAND_CONFIG } from "../data/mockData";
-import { validate3DFile, ValidationResult, ALLOWED_EXTENSIONS } from "../lib/fileValidator";
+import { validate3DFile, ValidationResult } from "../lib/fileValidator";
 import { ModelViewer3D, ModelMetrics } from "./ModelViewer3D";
 
 type OrderMode = "upload" | "custom_design";
-type PrintTech = "fdm" | "sla";
+type FilamentColor = "black" | "white" | "grey" | "special";
 
-interface MaterialOption {
-  id: string;
-  name: string;
-  density: number; // g/cm3
-  ratePerGram: number; // ₹ INR
-  tech: PrintTech;
-  desc: string;
-}
+const MATERIAL_PLA = {
+  name: "PLA High Precision",
+  density: 1.24,
+  ratePerGram: 6.5,
+};
 
-const MATERIALS: MaterialOption[] = [
-  // FDM
-  { id: "pla_plus", name: "PLA+", density: 1.24, ratePerGram: 6.5, tech: "fdm", desc: "Precision detail for figures & models" },
-  { id: "petg", name: "PETG", density: 1.27, ratePerGram: 8.5, tech: "fdm", desc: "Impact & heat resistant functional parts" },
-  { id: "abs", name: "ABS", density: 1.05, ratePerGram: 9.5, tech: "fdm", desc: "High tensile engineering components" },
-  { id: "carbon_tpu", name: "Carbon / TPU", density: 1.21, ratePerGram: 14.0, tech: "fdm", desc: "Extreme durability & composite strength" },
-
-  // SLA
-  { id: "standard_resin", name: "Standard Resin", density: 1.15, ratePerGram: 11.0, tech: "sla", desc: "Ultra-fine finish, invisible layer lines" },
-  { id: "tough_resin", name: "Tough ABS-Like", density: 1.18, ratePerGram: 14.5, tech: "sla", desc: "Shock resistant engineering SLA" },
-  { id: "clear_resin", name: "Optical Clear", density: 1.14, ratePerGram: 16.0, tech: "sla", desc: "High transparency polished acrylic finish" },
+const FILAMENT_COLORS: { id: FilamentColor; label: string; bg: string; ring: string }[] = [
+  { id: "black",   label: "Black",  bg: "#111111", ring: "#555" },
+  { id: "white",   label: "White",  bg: "#f4f4f4", ring: "#aaa" },
+  { id: "grey",    label: "Grey",   bg: "#717171", ring: "#888" },
+  { id: "special", label: "Custom", bg: "conic",   ring: "#aaa" },
 ];
 
-const INFILL_OPTIONS = [
-  { label: "15%", value: 15, hint: "Display" },
-  { label: "20%", value: 20, hint: "Standard" },
-  { label: "40%", value: 40, hint: "Functional" },
-  { label: "100%", value: 100, hint: "Solid" },
+const INFILL_PRESETS = [
+  { label: "15%",  value: 15  },
+  { label: "20%",  value: 20  },
+  { label: "50%",  value: 50  },
+  { label: "100%", value: 100 },
 ];
 
 const LAYER_HEIGHTS = [
-  { label: "0.20mm Standard", value: "0.20mm", costMult: 1.0 },
-  { label: "0.12mm Fine", value: "0.12mm", costMult: 1.25 },
-  { label: "0.05mm Ultra-SLA", value: "0.05mm", costMult: 1.6 },
+  { label: "Standard", sub: "0.20mm", value: "0.20mm", costMult: 1.0  },
+  { label: "Fine",     sub: "0.12mm", value: "0.12mm", costMult: 1.25 },
+  { label: "Draft",    sub: "0.28mm", value: "0.28mm", costMult: 0.85 },
+];
+
+const POST_FINISHES = [
+  { value: "Standard Raw Print",             label: "Raw",    sub: "Support cleaned" },
+  { value: "Hand-Sanded & Smoothed",          label: "Sanded", sub: "+ ₹90" },
+  { value: "Primer Coated & Ready to Paint",  label: "Primed", sub: "+ ₹160" },
 ];
 
 export function Order() {
@@ -72,9 +61,11 @@ export function Order() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Slicing & Engineering State
-  const [printTech, setPrintTech] = useState<PrintTech>("fdm");
-  const [selectedMaterial, setSelectedMaterial] = useState<MaterialOption>(MATERIALS[0]);
+  // Filament Color State
+  const [filamentColor, setFilamentColor] = useState<FilamentColor>("black");
+  const [specialColorNote, setSpecialColorNote] = useState("");
+
+  // Slicing & Engineering State (PLA Only)
   const [infill, setInfill] = useState<number>(20);
   const [layerHeight, setLayerHeight] = useState<string>("0.20mm");
   const [quantity, setQuantity] = useState<number>(1);
@@ -119,19 +110,6 @@ export function Order() {
     }
   }, [EMAILJS_CONFIG.PUBLIC_KEY]);
 
-  const handleTechChange = (tech: PrintTech) => {
-    setPrintTech(tech);
-    const available = MATERIALS.filter((m) => m.tech === tech);
-    if (available.length > 0) {
-      setSelectedMaterial(available[0]);
-    }
-    if (tech === "sla") {
-      setLayerHeight("0.05mm");
-    } else {
-      setLayerHeight("0.20mm");
-    }
-  };
-
   const handleFileSelect = (file: File) => {
     const result = validate3DFile(file);
     setFileValidation(result);
@@ -163,29 +141,31 @@ export function Order() {
     }
   };
 
-  // Real-Time Dynamic Quote Calculation (in ₹ INR)
+  // Real-Time Dynamic Quote Calculation for PLA (in ₹ INR)
   const calculateQuote = () => {
     const baseVolume = metrics?.volumeCm3 || 32.0;
     const effectiveInfill = infill / 100;
     const shellOverhead = 0.16;
     const totalVolumeFraction = effectiveInfill * 0.84 + shellOverhead;
 
-    const estGrams = Math.max(6, Math.round(baseVolume * selectedMaterial.density * totalVolumeFraction));
-    const materialCost = estGrams * selectedMaterial.ratePerGram;
+    const estGrams = Math.max(6, Math.round(baseVolume * MATERIAL_PLA.density * totalVolumeFraction));
+    const materialCost = estGrams * MATERIAL_PLA.ratePerGram;
 
     const layerObj = LAYER_HEIGHTS.find((l) => l.value === layerHeight);
     const qualityMult = layerObj?.costMult || 1.0;
 
-    const machinePrepFee = printTech === "sla" ? 140 : 75;
-    const machineHourRate = printTech === "sla" ? 40 : 25;
-    const estPrintHours = Math.max(1.2, (baseVolume * totalVolumeFraction * qualityMult) / 14);
+    const machinePrepFee = 75;
+    const machineHourRate = 25;
+    const estPrintHours = Math.max(1.0, (baseVolume * totalVolumeFraction * qualityMult) / 14);
     const machineCost = estPrintHours * machineHourRate;
 
     let postFee = 0;
     if (postFinish.includes("Hand-Sanded")) postFee = 90;
     if (postFinish.includes("Primer")) postFee = 160;
 
-    const unitPrice = Math.round((materialCost + machineCost + machinePrepFee + postFee) * qualityMult);
+    const colorSurcharge = filamentColor === "special" ? 60 : 0;
+
+    const unitPrice = Math.round((materialCost + machineCost + machinePrepFee + postFee + colorSurcharge) * qualityMult);
     const subtotal = unitPrice * quantity;
     const estimatedShipping = subtotal > 1200 ? 0 : 79;
     const total = subtotal + estimatedShipping;
@@ -201,6 +181,13 @@ export function Order() {
   };
 
   const quote = calculateQuote();
+
+  const getActiveFilamentLabel = () => {
+    if (filamentColor === "special") {
+      return specialColorNote ? `Special: ${specialColorNote}` : "Special Request";
+    }
+    return FILAMENT_COLORS.find((c) => c.id === filamentColor)?.label || "Black";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,8 +212,8 @@ export function Order() {
       delivery_address: `${streetAddress}, ${cityState} - PIN: ${pincode}`,
       file_name: selectedFile ? fileValidation?.sanitizedName : "Custom 3D Design",
       file_size: selectedFile ? fileValidation?.sizeFormatted : "N/A",
-      technology: printTech.toUpperCase(),
-      material: selectedMaterial.name,
+      material: MATERIAL_PLA.name,
+      filament_color: getActiveFilamentLabel(),
       infill: `${infill}%`,
       layer_height: layerHeight,
       finish: postFinish,
@@ -247,7 +234,7 @@ export function Order() {
             phone: customerPhone,
             email: customerEmail,
             message: JSON.stringify(payload, null, 2),
-            projectType: `3D Print [${payload.technology} - ${payload.material}]`,
+            projectType: `3D Print [PLA - ${payload.filament_color}]`,
             to_email: "rehaanrafael.john@gmail.com",
           },
           { publicKey: EMAILJS_CONFIG.PUBLIC_KEY }
@@ -277,8 +264,9 @@ export function Order() {
       `*Address:* ${streetAddress ? `${streetAddress}, ${cityState} - ${pincode}` : "Pending"}`,
       `---------------------------------`,
       `*File:* ${selectedFile ? fileValidation?.sanitizedName : "Custom 3D Design"}`,
-      `*Process:* ${printTech.toUpperCase()} | *Material:* ${selectedMaterial.name}`,
-      `*Infill:* ${infill}% | *Layer:* ${layerHeight}`,
+      `*Material:* PLA High Precision`,
+      `*Color:* ${getActiveFilamentLabel()}`,
+      `*Infill:* ${infill}% (Custom) | *Layer:* ${layerHeight}`,
       `*Finish:* ${postFinish}`,
       `*Quantity:* ${quantity}`,
       `*Est. Total:* ₹${quote.total.toLocaleString("en-IN")}`,
@@ -293,80 +281,76 @@ export function Order() {
     return `https://wa.me/${BRAND_CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`;
   };
 
+  /* shared input style */
+  const inputCls =
+    "w-full bg-transparent border-b border-white/[0.12] py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-white/40 focus:outline-none transition-colors";
+
   return (
-    <section id="order" className="relative py-24 md:py-36 bg-zinc-950 text-white">
-      {/* Delicate background gradient glow */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.02] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px]" />
-      <div className="pointer-events-none absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-cyan-500/[0.03] blur-[140px] rounded-full" />
+    <section id="order" className="relative py-28 md:py-40 bg-zinc-950 text-white overflow-hidden">
+      {/* Ambient dot grid */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.018] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:28px_28px]" />
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-cyan-500/[0.04] blur-[160px] rounded-full" />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
-        {/* Minimalist Section Header */}
-        <div className="mb-12 text-center max-w-2xl mx-auto">
-          <span className="text-[11px] font-mono tracking-[0.25em] text-zinc-400 uppercase">
-            Fabrication & Instant Quote
-          </span>
+      <div className="relative z-10 mx-auto max-w-6xl px-5 sm:px-8">
 
+        {/* ── Section Header ─────────────────────────────────────── */}
+        <div className="mb-16 max-w-xl">
+          <p className="text-[11px] tracking-[0.22em] text-zinc-500 uppercase mb-4">
+            Fabrication &amp; Instant Quote
+          </p>
           <h2
-            className="mt-2 text-3xl sm:text-4xl md:text-5xl font-normal text-white tracking-tight leading-tight"
+            className="text-4xl sm:text-5xl md:text-[3.4rem] font-normal leading-[1.08] tracking-tight text-white"
             style={{ fontFamily: "'Fraunces', ui-serif, Georgia, serif" }}
           >
-            Tell us what <br />
-            <span className="italic text-zinc-400">you&apos;d like to make.</span>
+            Tell us what<br />
+            <em className="not-italic text-zinc-400">you&apos;d like to make.</em>
           </h2>
-
-          <p className="mt-3 text-xs sm:text-sm text-zinc-400 max-w-md mx-auto leading-relaxed">
-            Upload your CAD file for real-time 3D inspection and instant quote calculation, or request a bespoke model designed from scratch.
+          <p className="mt-5 text-sm text-zinc-500 leading-relaxed max-w-sm">
+            Upload your CAD file for instant 3D inspection and a real-time PLA quote, or describe a model for us to design from scratch.
           </p>
 
-          {/* Minimalist Segmented Mode Switcher */}
-          <div className="mt-7 inline-flex p-1 rounded-full bg-zinc-900/80 border border-white/[0.08] backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => setMode("upload")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium transition-all ${
-                mode === "upload"
-                  ? "bg-white text-black shadow-sm"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>Upload 3D CAD File</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMode("custom_design")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium transition-all ${
-                mode === "custom_design"
-                  ? "bg-white text-black shadow-sm"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              <PenTool className="w-3.5 h-3.5" />
-              <span>Custom 3D Design</span>
-            </button>
+          {/* Underline mode tabs */}
+          <div className="mt-8 flex items-center gap-6 border-b border-white/[0.08]">
+            {[
+              { id: "upload" as OrderMode, icon: <Upload className="w-3.5 h-3.5" />, label: "Upload File" },
+              { id: "custom_design" as OrderMode, icon: <PenTool className="w-3.5 h-3.5" />, label: "Custom Design" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setMode(tab.id)}
+                className={`flex items-center gap-2 pb-3 text-xs font-medium transition-all border-b-2 -mb-px ${
+                  mode === tab.id
+                    ? "border-white text-white"
+                    : "border-transparent text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Main Grid Form */}
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* ========================================================= */}
-          {/* LEFT: 3D Stage & Fabrication Specs                        */}
-          {/* ========================================================= */}
-          <div className="lg:col-span-7 space-y-5">
+        {/* ── Main Form Grid ──────────────────────────────────────── */}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+
+          {/* LEFT COLUMN */}
+          <div className="lg:col-span-7 space-y-8">
+
             {mode === "upload" ? (
               <>
-                {/* 1. File Upload / 3D Model Stage */}
+                {/* File Drop Zone / 3D Viewer */}
                 {!selectedFile ? (
                   <div
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`relative rounded-2xl border border-dashed p-8 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[260px] bg-zinc-950/40 ${
+                    className={`relative rounded-2xl cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[260px] text-center ${
                       isDragging
-                        ? "border-cyan-400 bg-cyan-950/20"
-                        : "border-white/15 hover:border-white/30 hover:bg-white/[0.02]"
+                        ? "bg-cyan-950/20 border border-cyan-400/50"
+                        : "bg-white/[0.015] border border-dashed border-white/[0.12] hover:border-white/25 hover:bg-white/[0.025]"
                     }`}
                   >
                     <input
@@ -374,413 +358,374 @@ export function Order() {
                       type="file"
                       accept=".stl,.3mf,.obj,.step,.stp"
                       className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          handleFileSelect(e.target.files[0]);
-                        }
-                      }}
+                      onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0]); }}
                     />
-
-                    <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-zinc-300 mb-3">
-                      <Upload className="w-5 h-5" />
+                    <div className="mb-5 w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-zinc-400">
+                      <Upload className="w-4 h-4" />
                     </div>
-
-                    <div className="text-sm font-medium text-white mb-1">
-                      Drop your 3D CAD file here
-                    </div>
-                    <div className="text-xs text-zinc-400 mb-3">
-                      or click to browse your desktop
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
-                      <span>.STL</span>
-                      <span>•</span>
-                      <span>.3MF</span>
-                      <span>•</span>
-                      <span>.OBJ</span>
-                      <span>•</span>
-                      <span>.STEP</span>
-                      <span className="text-zinc-600">| Max 50MB</span>
+                    <p className="text-sm text-white font-medium mb-1">Drop your CAD file here</p>
+                    <p className="text-xs text-zinc-500 mb-5">or click to browse</p>
+                    <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600 tracking-widest uppercase">
+                      {[".STL", ".3MF", ".OBJ", ".STEP"].map((ext, i, arr) => (
+                        <React.Fragment key={ext}>
+                          <span>{ext}</span>
+                          {i < arr.length - 1 && <span className="text-zinc-700">·</span>}
+                        </React.Fragment>
+                      ))}
+                      <span className="text-zinc-700 ml-1">/ 50 MB</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {/* Compact File Header */}
-                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-zinc-900/60 border border-white/[0.08]">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07]">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <FileCheck className="w-4 h-4 text-cyan-400 shrink-0" />
-                        <span className="text-xs font-mono text-white truncate">
-                          {fileValidation?.sanitizedName}
-                        </span>
-                        <span className="text-[11px] font-mono text-zinc-500 shrink-0">
-                          {fileValidation?.sizeFormatted}
-                        </span>
+                        <FileCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <span className="text-xs font-mono text-white truncate">{fileValidation?.sanitizedName}</span>
+                        <span className="text-[11px] font-mono text-zinc-500 shrink-0">{fileValidation?.sizeFormatted}</span>
                       </div>
-
                       <button
                         type="button"
                         onClick={handleClearFile}
-                        className="text-xs text-zinc-400 hover:text-rose-400 transition-colors font-mono px-2 py-1"
+                        className="text-zinc-500 hover:text-rose-400 transition-colors ml-3"
+                        aria-label="Remove file"
                       >
-                        Change
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-
-                    {/* Three.js 3D Viewer */}
                     <ModelViewer3D
                       file={selectedFile}
-                      materialDensity={selectedMaterial.density}
+                      materialDensity={MATERIAL_PLA.density}
                       infillPercent={infill}
+                      filamentColor={filamentColor}
                       onMetricsComputed={(m) => setMetrics(m)}
                     />
                   </div>
                 )}
 
-                {/* 2. Streamlined Slicing Controls */}
-                <div className="rounded-2xl border border-white/[0.08] bg-zinc-950/60 backdrop-blur-md p-5 sm:p-6 space-y-5">
-                  {/* Manufacturing Process */}
-                  <div>
-                    <div className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-2">
-                      Process
-                    </div>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => handleTechChange("fdm")}
-                        className={`py-2.5 px-4 rounded-xl border text-xs font-mono transition-all text-left ${
-                          printTech === "fdm"
-                            ? "bg-white/[0.08] border-cyan-400/80 text-white"
-                            : "bg-transparent border-white/[0.08] text-zinc-400 hover:text-white"
-                        }`}
-                      >
-                        <div className="font-semibold">FDM Filament</div>
-                        <div className="text-[10px] text-zinc-500 mt-0.5">Durable & functional</div>
-                      </button>
+                {/* PLA Slicing Controls */}
+                <div className="space-y-7">
 
-                      <button
-                        type="button"
-                        onClick={() => handleTechChange("sla")}
-                        className={`py-2.5 px-4 rounded-xl border text-xs font-mono transition-all text-left ${
-                          printTech === "sla"
-                            ? "bg-white/[0.08] border-cyan-400/80 text-white"
-                            : "bg-transparent border-white/[0.08] text-zinc-400 hover:text-white"
-                        }`}
-                      >
-                        <div className="font-semibold">SLA Resin</div>
-                        <div className="text-[10px] text-zinc-500 mt-0.5">Ultra-smooth 0.05mm</div>
-                      </button>
-                    </div>
+                  {/* Material line */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-300 font-medium">PLA High Precision</span>
+                    <span className="text-xs font-mono text-zinc-500">₹{MATERIAL_PLA.ratePerGram}/g · 1.24 g/cm³</span>
                   </div>
 
-                  {/* Material Selector */}
+                  {/* Filament Color */}
                   <div>
-                    <div className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-2">
-                      Material Grade
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {MATERIALS.filter((m) => m.tech === printTech).map((mat) => (
+                    <p className="text-[11px] text-zinc-500 uppercase tracking-[0.15em] mb-3">Filament Color</p>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      {FILAMENT_COLORS.map((col) => (
                         <button
-                          key={mat.id}
+                          key={col.id}
                           type="button"
-                          onClick={() => setSelectedMaterial(mat)}
-                          className={`p-2.5 rounded-xl border text-left transition-all ${
-                            selectedMaterial.id === mat.id
-                              ? "bg-white/[0.08] border-cyan-400/80 text-white"
-                              : "bg-transparent border-white/[0.06] text-zinc-400 hover:text-white"
+                          onClick={() => setFilamentColor(col.id)}
+                          title={col.label}
+                          className="flex flex-col items-center gap-1.5"
+                        >
+                          <span
+                            className={`block w-7 h-7 rounded-full transition-all duration-200 ${
+                              filamentColor === col.id
+                                ? "ring-2 ring-offset-2 ring-offset-zinc-950 ring-white scale-110"
+                                : "opacity-60 hover:opacity-90"
+                            }`}
+                            style={
+                              col.id === "special"
+                                ? { background: "conic-gradient(from 0deg, #facc15, #f87171, #38bdf8, #4ade80, #facc15)" }
+                                : { background: col.bg, boxShadow: `0 0 0 1px ${col.ring}` }
+                            }
+                          />
+                          <span className={`text-[10px] font-mono transition-colors ${filamentColor === col.id ? "text-white" : "text-zinc-600"}`}>
+                            {col.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    {filamentColor === "special" && (
+                      <input
+                        type="text"
+                        value={specialColorNote}
+                        onChange={(e) => setSpecialColorNote(e.target.value)}
+                        placeholder="Describe your color (e.g. Silk Gold, Matte Navy, Glow-in-dark…)"
+                        className={`${inputCls} mt-4 text-xs`}
+                      />
+                    )}
+                  </div>
+
+                  <div className="border-t border-white/[0.06]" />
+
+                  {/* Infill Density */}
+                  <div>
+                    <div className="flex items-baseline justify-between mb-3">
+                      <p className="text-[11px] text-zinc-500 uppercase tracking-[0.15em]">Infill</p>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          min="5" max="100"
+                          value={infill}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value);
+                            if (!isNaN(v)) setInfill(Math.min(100, Math.max(5, v)));
+                          }}
+                          className="w-12 bg-transparent border-b border-white/[0.15] text-right text-sm font-mono text-white focus:border-white/40 focus:outline-none"
+                        />
+                        <span className="text-sm font-mono text-zinc-500">%</span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min="5" max="100" step="1"
+                      value={infill}
+                      onChange={(e) => setInfill(Math.min(100, Math.max(5, parseInt(e.target.value) || 5)))}
+                      className="w-full cursor-pointer h-px bg-zinc-800 rounded-full appearance-none mb-3"
+                      style={{ accentColor: "rgba(255,255,255,0.85)" }}
+                    />
+                    <div className="flex items-center gap-2">
+                      {INFILL_PRESETS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setInfill(opt.value)}
+                          className={`flex-1 py-1.5 rounded-lg border text-[11px] font-mono transition-all text-center ${
+                            infill === opt.value
+                              ? "bg-white/[0.07] border-white/25 text-white"
+                              : "border-white/[0.06] text-zinc-500 hover:text-zinc-300"
                           }`}
                         >
-                          <div className="text-xs font-medium truncate">{mat.name}</div>
-                          <div className="text-[10px] font-mono text-cyan-300 mt-0.5">
-                            ₹{mat.ratePerGram}/g
-                          </div>
+                          {opt.label}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Infill & Layer Quality */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Infill */}
-                    <div>
-                      <div className="flex justify-between text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-2">
-                        <span>Infill Density</span>
-                        <span className="text-white">{infill}%</span>
-                      </div>
-                      <div className="grid grid-cols-4 gap-1.5">
-                        {INFILL_OPTIONS.map((opt) => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setInfill(opt.value)}
-                            className={`py-1.5 rounded-lg border text-xs font-mono transition-all text-center ${
-                              infill === opt.value
-                                ? "bg-white/[0.08] border-cyan-400/80 text-cyan-200"
-                                : "border-white/[0.06] text-zinc-400 hover:text-white"
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="border-t border-white/[0.06]" />
 
-                    {/* Layer Quality */}
+                  {/* Layer Height & Surface Finish */}
+                  <div className="grid grid-cols-2 gap-8">
                     <div>
-                      <div className="flex justify-between text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-2">
-                        <span>Layer Quality</span>
-                        <span className="text-white">{layerHeight}</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <p className="text-[11px] text-zinc-500 uppercase tracking-[0.15em] mb-3">Layer Quality</p>
+                      <div className="flex flex-col gap-1.5">
                         {LAYER_HEIGHTS.map((layer) => (
                           <button
                             key={layer.value}
                             type="button"
                             onClick={() => setLayerHeight(layer.value)}
-                            className={`py-1.5 px-1 rounded-lg border text-[11px] font-mono transition-all text-center truncate ${
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg border text-left transition-all ${
                               layerHeight === layer.value
-                                ? "bg-white/[0.08] border-cyan-400/80 text-cyan-200"
-                                : "border-white/[0.06] text-zinc-400 hover:text-white"
+                                ? "bg-white/[0.06] border-white/20 text-white"
+                                : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
                             }`}
                           >
-                            {layer.value}
+                            <span className="text-xs">{layer.label}</span>
+                            <span className="text-[10px] font-mono text-zinc-600">{layer.sub}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-zinc-500 uppercase tracking-[0.15em] mb-3">Surface Finish</p>
+                      <div className="flex flex-col gap-1.5">
+                        {POST_FINISHES.map((fin) => (
+                          <button
+                            key={fin.value}
+                            type="button"
+                            onClick={() => setPostFinish(fin.value)}
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg border text-left transition-all ${
+                              postFinish === fin.value
+                                ? "bg-white/[0.06] border-white/20 text-white"
+                                : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
+                            }`}
+                          >
+                            <span className="text-xs">{fin.label}</span>
+                            <span className="text-[10px] font-mono text-zinc-600">{fin.sub}</span>
                           </button>
                         ))}
                       </div>
                     </div>
                   </div>
 
-                  {/* Surface Finish & Quantity */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-white/[0.06]">
-                    <div className="sm:col-span-2">
-                      <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1 block">
-                        Surface Finish
-                      </label>
-                      <select
-                        value={postFinish}
-                        onChange={(e) => setPostFinish(e.target.value)}
-                        className="w-full rounded-xl border border-white/[0.08] bg-zinc-900/90 px-3 py-2 text-xs text-white focus:border-white/30 focus:outline-none"
-                      >
-                        <option value="Standard Raw Print">Standard Raw Print (Support Cleaned)</option>
-                        <option value="UV Cured & Hand-Sanded">UV Cured & Hand-Sanded</option>
-                        <option value="Primer Coated & Ready to Paint">Primer Coated (Ready to Paint)</option>
-                      </select>
-                    </div>
+                  <div className="border-t border-white/[0.06]" />
 
-                    <div>
-                      <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1 block">
-                        Quantity
-                      </label>
-                      <div className="flex items-center rounded-xl border border-white/[0.08] bg-zinc-900/90 overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="px-3 py-2 text-zinc-400 hover:text-white text-xs font-mono"
-                        >
-                          -
-                        </button>
-                        <span className="flex-1 text-center font-mono text-xs font-medium text-white">
-                          {quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(quantity + 1)}
-                          className="px-3 py-2 text-zinc-400 hover:text-white text-xs font-mono"
-                        >
-                          +
-                        </button>
-                      </div>
+                  {/* Quantity */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-zinc-400">Quantity</p>
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="w-7 h-7 flex items-center justify-center rounded-full border border-white/[0.1] text-zinc-400 hover:text-white hover:border-white/30 transition-all"
+                      >−</button>
+                      <span className="font-mono text-sm text-white w-5 text-center">{quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="w-7 h-7 flex items-center justify-center rounded-full border border-white/[0.1] text-zinc-400 hover:text-white hover:border-white/30 transition-all"
+                      >+</button>
                     </div>
                   </div>
                 </div>
               </>
             ) : (
-              // Custom 3D Design Request
-              <div className="rounded-2xl border border-white/[0.08] bg-zinc-950/60 backdrop-blur-md p-6 space-y-4">
-                <div className="flex items-center gap-2.5 pb-3 border-b border-white/[0.06]">
+              /* Custom Design Mode */
+              <div className="space-y-8">
+                <div className="flex items-center gap-3 pb-5 border-b border-white/[0.06]">
                   <Sparkles className="w-4 h-4 text-cyan-400" />
-                  <span className="text-xs font-mono text-zinc-300 uppercase tracking-wider">
-                    Custom 3D Sculpting & CAD
-                  </span>
+                  <span className="text-sm text-zinc-300">Custom Sculpting &amp; CAD Modeling</span>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1 block">
-                    Category
-                  </label>
+                  <label className="text-[11px] text-zinc-500 uppercase tracking-[0.15em] block mb-2">Category</label>
                   <select
                     value={customUse}
                     onChange={(e) => setCustomUse(e.target.value)}
-                    className="w-full rounded-xl border border-white/[0.08] bg-zinc-900/90 px-3 py-2.5 text-xs text-white focus:border-white/30 focus:outline-none"
+                    className="w-full bg-transparent border-b border-white/[0.12] py-2.5 text-sm text-white focus:border-white/40 focus:outline-none transition-colors appearance-none"
                   >
-                    <option value="Figurine / Anime / Pop Culture">Figurine / Anime / Pop Culture</option>
-                    <option value="Mechanical / Functional Bracket">Mechanical / Functional Bracket</option>
-                    <option value="Architectural Decor / Display">Architectural Decor / Display</option>
-                    <option value="Custom Gift / Lithophane">Custom Gift / Lithophane</option>
+                    <option value="Figurine / Anime / Pop Culture" className="bg-zinc-900">Figurine / Anime / Pop Culture</option>
+                    <option value="Mechanical / Functional Bracket" className="bg-zinc-900">Mechanical / Functional Bracket</option>
+                    <option value="Architectural Decor / Display" className="bg-zinc-900">Architectural Decor / Display</option>
+                    <option value="Custom Gift / Lithophane" className="bg-zinc-900">Custom Gift / Lithophane</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1 block">
-                    Approximate Dimensions
-                  </label>
+                  <label className="text-[11px] text-zinc-500 uppercase tracking-[0.15em] block mb-2">Approximate Dimensions</label>
                   <input
                     type="text"
                     value={customDimensions}
                     onChange={(e) => setCustomDimensions(e.target.value)}
                     placeholder="e.g. 15cm height, or 80mm × 50mm × 40mm"
-                    className="w-full rounded-xl border border-white/[0.08] bg-zinc-900/90 px-3 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none font-mono"
+                    className={`${inputCls} font-mono text-sm`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1 block">
-                    Design Concept & Brief
-                  </label>
+                  <label className="text-[11px] text-zinc-500 uppercase tracking-[0.15em] block mb-2">Design Brief</label>
                   <textarea
-                    rows={4}
+                    rows={5}
                     value={customBrief}
                     onChange={(e) => setCustomBrief(e.target.value)}
                     required
-                    placeholder="Describe what you want sculpted or modeled. Character name, posture, functional tolerances, or links to reference photos."
-                    className="w-full resize-none rounded-xl border border-white/[0.08] bg-zinc-900/90 px-3 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none leading-relaxed"
+                    placeholder="Describe what you want — character name, posture, tolerances, reference links…"
+                    className="w-full bg-transparent border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:border-white/25 focus:outline-none resize-none leading-relaxed transition-colors"
                   />
                 </div>
               </div>
             )}
           </div>
 
-          {/* ========================================================= */}
-          {/* RIGHT: Unified Minimalist Quote & Checkout               */}
-          {/* ========================================================= */}
-          <div className="lg:col-span-5">
-            <div className="rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur-xl p-6 space-y-5">
-              {/* Quote Overview Header */}
-              <div className="pb-4 border-b border-white/[0.06]">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
-                    Estimated Quote
-                  </span>
-                  <span className="text-[11px] font-mono text-emerald-400">
-                    {quote.estimatedShipping === 0 ? "Free Shipping" : "+ ₹79 Courier"}
-                  </span>
-                </div>
+          {/* RIGHT COLUMN — Quote & Checkout */}
+          <div className="lg:col-span-5 lg:sticky lg:top-28">
+            <div className="rounded-2xl border border-white/[0.08] bg-zinc-900/40 backdrop-blur-xl p-7 space-y-7">
 
-                <div className="mt-2 text-3xl font-bold font-mono text-white tracking-tight">
+              {/* Quote Header */}
+              <div className="pb-6 border-b border-white/[0.06]">
+                <p className="text-[11px] text-zinc-500 uppercase tracking-[0.15em] mb-3">Estimated Total</p>
+                <div
+                  className="text-[2.8rem] font-light leading-none tracking-tight text-white mb-3"
+                  style={{ fontFamily: "'Fraunces', ui-serif, Georgia, serif" }}
+                >
                   ₹{quote.total.toLocaleString("en-IN")}
                 </div>
-
-                <div className="mt-2 text-[11px] text-zinc-400 flex items-center gap-3">
-                  <span>~{quote.estGrams * quantity}g total</span>
-                  <span>•</span>
-                  <span>{quantity} unit{quantity > 1 ? "s" : ""}</span>
-                  <span>•</span>
-                  <span>Taxes included</span>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-zinc-500 font-mono">
+                  <span>PLA</span>
+                  <span>·</span>
+                  <span className="capitalize">{getActiveFilamentLabel()}</span>
+                  <span>·</span>
+                  <span>~{quote.estGrams * quantity}g</span>
+                  <span>·</span>
+                  <span>{quantity} {quantity > 1 ? "units" : "unit"}</span>
+                  {quote.estimatedShipping === 0 ? (
+                    <><span>·</span><span className="text-emerald-400">Free shipping</span></>
+                  ) : (
+                    <><span>·</span><span>+ ₹79 courier</span></>
+                  )}
                 </div>
               </div>
 
-              {/* Delivery & Contact Details */}
-              <div className="space-y-3 pt-1">
-                <div className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
-                  Delivery Details
-                </div>
+              {/* Delivery & Contact Fields */}
+              <div className="space-y-5">
+                <p className="text-[11px] text-zinc-500 uppercase tracking-[0.15em]">Delivery Details</p>
 
-                <div>
+                <input
+                  type="text" required
+                  value={customerName} onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Full name *"
+                  className={inputCls}
+                />
+
+                <div className="grid grid-cols-2 gap-5">
                   <input
-                    type="text"
-                    required
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Full Name *"
-                    className="w-full rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none transition-colors"
+                    type="tel" required
+                    value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="WhatsApp *"
+                    className={`${inputCls} font-mono`}
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <input
-                    type="tel"
-                    required
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="WhatsApp Phone *"
-                    className="w-full rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none font-mono transition-colors"
-                  />
-
                   <input
                     type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)}
                     placeholder="Email (optional)"
-                    className="w-full rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none transition-colors"
+                    className={inputCls}
                   />
                 </div>
 
-                <div>
-                  <input
-                    type="text"
-                    required
-                    value={streetAddress}
-                    onChange={(e) => setStreetAddress(e.target.value)}
-                    placeholder="Street Address / Flat No. *"
-                    className="w-full rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none transition-colors"
-                  />
-                </div>
+                <input
+                  type="text" required
+                  value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)}
+                  placeholder="Street address / Flat no. *"
+                  className={inputCls}
+                />
 
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-5">
                   <input
-                    type="text"
-                    required
-                    value={cityState}
-                    onChange={(e) => setCityState(e.target.value)}
+                    type="text" required
+                    value={cityState} onChange={(e) => setCityState(e.target.value)}
                     placeholder="City, State *"
-                    className="w-full rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none transition-colors"
+                    className={inputCls}
                   />
-
                   <input
-                    type="text"
-                    required
-                    value={pincode}
-                    onChange={(e) => setPincode(e.target.value)}
+                    type="text" required
+                    value={pincode} onChange={(e) => setPincode(e.target.value)}
                     placeholder="PIN Code *"
-                    className="w-full rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none font-mono transition-colors"
+                    className={`${inputCls} font-mono`}
                   />
                 </div>
 
-                <div>
-                  <textarea
-                    rows={2}
-                    value={specialInstructions}
-                    onChange={(e) => setSpecialInstructions(e.target.value)}
-                    placeholder="Notes (color preference, critical tolerances...)"
-                    className="w-full resize-none rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3.5 py-2 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none transition-colors"
-                  />
-                </div>
+                <textarea
+                  rows={2}
+                  value={specialInstructions} onChange={(e) => setSpecialInstructions(e.target.value)}
+                  placeholder="Notes — tolerances, deadline, special requests…"
+                  className="w-full bg-transparent border-b border-white/[0.12] py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-white/40 focus:outline-none resize-none transition-colors leading-relaxed"
+                />
               </div>
 
               {/* Action Buttons */}
-              <div className="space-y-2 pt-2">
+              <div className="space-y-2.5 pt-1">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-semibold text-black transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60"
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-white text-black text-sm font-medium py-3.5 hover:bg-zinc-100 active:scale-[0.99] transition-all disabled:opacity-50"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>{isSubmitting ? "Submitting..." : "Submit Order Request"}</span>
+                  {isSubmitting ? "Sending…" : "Submit Order"}
                 </button>
 
                 <a
                   href={generateWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-zinc-900/60 px-5 py-2.5 text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-900 transition-all"
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.08] text-sm text-zinc-400 py-3 hover:text-white hover:border-white/20 transition-all"
                 >
                   <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Direct WhatsApp Dispatch</span>
+                  WhatsApp Dispatch
                 </a>
               </div>
             </div>
           </div>
+
         </form>
       </div>
     </section>
   );
 }
+
+
