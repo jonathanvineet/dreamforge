@@ -18,6 +18,7 @@ import { validate3DFile, ValidationResult } from "../lib/fileValidator";
 import { ModelViewer3D, ModelMetrics } from "./ModelViewer3D";
 import { useCart } from "../context/CartContext";
 import { supabase } from "../lib/supabase";
+import { useSlicedQuote } from "../hooks/useSlicedQuote";
 
 type OrderMode = "upload" | "custom_design" | "cart";
 type FilamentColor = "black" | "white" | "grey" | "special";
@@ -121,6 +122,7 @@ export function Order() {
   }, []);
 
   const handleFileSelect = (file: File) => {
+    setMetrics(null);
     const result = validate3DFile(file);
     setFileValidation(result);
 
@@ -190,7 +192,17 @@ export function Order() {
     };
   };
 
-  const quote = calculateQuote();
+  const slicedQuote = useSlicedQuote(selectedFile, {
+    infill, layer_height: layerHeight, filament_color: filamentColor, finish: postFinish, quantity,
+  }, mode === "upload");
+  const quote = slicedQuote.result ? {
+    estGrams: slicedQuote.result.metrics.filament_grams,
+    estPrintHours: slicedQuote.result.metrics.print_time_hours,
+    unitPrice: slicedQuote.result.pricing.unit_price,
+    subtotal: slicedQuote.result.pricing.subtotal,
+    estimatedShipping: slicedQuote.result.pricing.shipping,
+    total: slicedQuote.result.pricing.total,
+  } : calculateQuote();
 
   const getActiveFilamentLabel = () => {
     if (filamentColor === "special") {
@@ -253,6 +265,9 @@ export function Order() {
 
     try {
       // 1. Insert into Supabase ERP Database
+      const quoteSource = mode === "upload"
+        ? (slicedQuote.result ? `Quote source: OrcaSlicer (${slicedQuote.result.pricing.policy_version})` : "Quote source: browser estimate; final price requires review")
+        : "";
       const dbPayload = {
         customer_name: customerName,
         customer_phone: customerPhone,
@@ -264,7 +279,7 @@ export function Order() {
         quoted_price: mode === "cart" 
           ? cartSubtotal + (cartSubtotal > 500 || cartSubtotal === 0 ? 0 : 79)
           : quote.total,
-        notes: payload.notes,
+        notes: [payload.notes, quoteSource].filter(Boolean).join("\n"),
         filament_grams: mode === "cart" ? 0 : quote.estGrams * quantity,
         print_hours: mode === "cart" ? 0 : quote.estPrintHours * quantity,
       };
@@ -662,7 +677,7 @@ export function Order() {
                       <span className="font-mono text-sm text-white w-5 text-center">{quantity}</span>
                       <button
                         type="button"
-                        onClick={() => setQuantity(quantity + 1)}
+                        onClick={() => setQuantity(Math.min(100, quantity + 1))}
                         className="w-7 h-7 flex items-center justify-center rounded-full border border-white/[0.1] text-zinc-400 hover:text-white hover:border-white/30 transition-all"
                       >+</button>
                     </div>
@@ -752,7 +767,7 @@ export function Order() {
                       <span>·</span>
                       <span className="capitalize">{getActiveFilamentLabel()}</span>
                       <span>·</span>
-                      <span>~{quote.estGrams * quantity}g</span>
+                      <span>~{(quote.estGrams * quantity).toFixed(1)}g</span>
                       <span>·</span>
                       <span>{quantity} {quantity > 1 ? "units" : "unit"}</span>
                       {quote.estimatedShipping === 0 ? (
@@ -763,6 +778,24 @@ export function Order() {
                     </>
                   )}
                 </div>
+                {mode === "upload" && selectedFile && (
+                  <div className="mt-4 text-xs leading-relaxed" role="status" aria-live="polite">
+                    {slicedQuote.loading ? (
+                      <p className="text-cyan-300">Calculating print time and material… Current price is an estimate.</p>
+                    ) : slicedQuote.result ? (
+                      <p className="text-emerald-400">Quote based on sliced material and print time · {slicedQuote.result.metrics.print_time_formatted} per unit</p>
+                    ) : (
+                      <div className="text-amber-300/80">
+                        <p>{slicedQuote.error ?? (!slicedQuote.supported
+                          ? "This format needs manual review. Price shown is a rough estimate."
+                          : "Estimated quote — final price confirmed upon order.")}</p>
+                        {slicedQuote.error && (
+                          <button type="button" onClick={slicedQuote.retry} className="mt-2 underline underline-offset-4">Retry quote</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Delivery & Contact Fields */}
